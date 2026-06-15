@@ -258,6 +258,17 @@
         .ps-edit:hover { border-color: var(--accent); color: var(--accent); }
         .ps-reset { background: transparent; color: var(--text-muted); }
         .ps-reset:hover { border-color: var(--accent); color: var(--accent); }
+        .confirm-overlay { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(2,4,7,0.72); }
+        .confirm-overlay.show { display: flex; }
+        .confirm-card { width: 100%; max-width: 380px; background: var(--surface-2); border: 1px solid var(--border-bright); border-radius: calc(var(--r) + 4px); padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+        .confirm-title { font-family: var(--display); font-size: 1.5rem; letter-spacing: 0.04em; color: var(--text); margin-bottom: 10px; }
+        .confirm-body { font-size: 0.86rem; color: var(--text-dim); line-height: 1.55; margin-bottom: 20px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-actions button { flex: 1; min-height: var(--tap); border-radius: var(--r); font-family: var(--mono); font-size: 0.9rem; cursor: pointer; border: 1px solid var(--border-bright); }
+        .confirm-cancel { background: transparent; color: var(--text); }
+        .confirm-cancel:hover { border-color: var(--text-dim); }
+        .confirm-ok { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+        .confirm-ok:hover { filter: brightness(1.08); }
         .generate-btn, .export-btn, .text-btn {
             border: none; font-family: var(--display); letter-spacing: 0.1em; cursor: pointer; border-radius: var(--r);
             transition: transform .12s, box-shadow .2s, filter .15s, background .15s;
@@ -5096,7 +5107,17 @@
             if(state) state.style.display = 'none';
             if(form){ form.style.display = ''; form.scrollIntoView({ behavior: 'smooth' }); }
         }
-        function resetProgram(){
+        function resetProgram(){           // ask first — this wipe is irreversible
+            const o = document.getElementById('confirmOverlay');
+            if(o) o.classList.add('show');
+        }
+        function closeConfirm(e){
+            if(e && e.target && e.target.id !== 'confirmOverlay') return;  // ignore clicks inside the card
+            const o = document.getElementById('confirmOverlay');
+            if(o) o.classList.remove('show');
+        }
+        function confirmResetProgram(){
+            closeConfirm();
             try { if(window.localStorage) localStorage.removeItem(PROGRAM_KEY); } catch(e){}
             const out   = document.getElementById('programOutput');
             const form  = document.getElementById('programForm');
@@ -5251,6 +5272,17 @@
     </nav>
 
     <!-- ════ Shared sheet backdrop ════ -->
+    <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirm(event)">
+        <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <div class="confirm-title" id="confirmTitle">Reset program?</div>
+            <div class="confirm-body">This clears your generated program. Your lift inputs are kept, so you can build a new one. This can&rsquo;t be undone.</div>
+            <div class="confirm-actions">
+                <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="confirm-ok" onclick="confirmResetProgram()">Reset Program</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeAllSheets()"></div>
 
     <!-- ════ Text export sheet ════ -->
