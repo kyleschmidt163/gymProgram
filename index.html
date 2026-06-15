@@ -249,6 +249,8 @@
 
         /* ════ PRIMARY / EXPORT BUTTONS (in-flow) ════ */
         .button-row { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+        .program-desc { margin-top: 14px; font-size: 0.84rem; line-height: 1.55; color: var(--text-dim); border-left: 2px solid var(--accent); padding: 2px 0 2px 12px; }
+        .program-desc:empty { display: none; }
         #programState { margin-top: 18px; }
         .ps-stack { display: flex; flex-direction: column; gap: 10px; }
         .ps-btn { min-height: var(--tap); border-radius: var(--r); font-family: var(--mono); font-size: 0.92rem; cursor: pointer; padding: 0 16px; border: 1px solid var(--border-bright); transition: border-color .15s, color .15s, filter .15s; }
@@ -895,6 +897,7 @@
                     <option value="rpe_cutting">RPE Cutting Program — Maintenance</option>
                 </select>
             </div>
+            <div id="programDesc" class="program-desc"></div>
         </div>
 
         <!-- ── Program Options ── -->
@@ -1810,6 +1813,7 @@
         // ── Focus change handler ────────────────────────────────────────────────
         function handleFocusChange() {
             const focus = document.getElementById('accessoryFocus').value;
+            updateProgramDesc(focus);
 
             const liftsPanel    = document.getElementById('mainLiftsPanel');
             const optionsPanel  = document.getElementById('programOptionsPanel');
@@ -4858,6 +4862,24 @@
             peaking_block:'Peaking Block', advanced_rpe:'Advanced RPE', powerlifting:'Sub-Max RPE',
             rpe_cutting:'RPE Cutting'
         };
+        const programDescriptions = {
+            beginner_machine: 'Machine-only full-body training for newcomers. Push/Pull and Legs/Core across 4 days, with RPE rising over the block, an AMRAP test week, then a deload — built around safe form and steady progression.',
+            benchmax: 'A bench-specialisation block built to push your bench press, with supporting pressing and back volume around it. 4 days a week.',
+            arm_growth: 'Hypertrophy training with extra direct volume for biceps and triceps, built on RPE-driven compound lifts plus arm isolation.',
+            leg_growth: 'A hypertrophy block weighted toward the lower body — more quad, hamstring and calf volume — with RPE-driven compounds anchoring each session.',
+            bodybuilding: 'General hypertrophy using RPE-autoregulated compound lifts as the base, with accessory work for balanced, all-round development.',
+            shoulder_growth: 'A hypertrophy block emphasising the delts — added pressing and lateral/rear volume — over RPE-driven main lifts.',
+            bulgarian_lite: 'A lighter take on the Bulgarian method: high frequency, working up to a daily top set on the main lifts. Demanding — best for experienced lifters who recover well.',
+            mass_builder: 'Posterior-chain hypertrophy weighted toward the glutes, with hip-hinge and bridge volume alongside the main lifts.',
+            peaking_block: 'A four-week meet-prep peak. RPE climbs and reps drop week to week to sharpen the squat, bench and deadlift toward a one-rep-max attempt, finishing with a taper.',
+            advanced_rpe: 'Auto-regulated powerlifting for experienced lifters — top sets and back-offs set by RPE rather than fixed percentages. 4 days a week.',
+            powerlifting: 'Submaximal RPE strength work for the big three — builds the squat, bench and deadlift while staying short of grinding maximal sets.',
+            rpe_cutting: 'Strength-maintenance programming for a calorie deficit: lower, capped RPEs to hold your numbers and manage fatigue while cutting, rather than chase PRs.'
+        };
+        function updateProgramDesc(focus){
+            const el = document.getElementById('programDesc');
+            if(el) el.textContent = programDescriptions[focus] || '';
+        }
         function buildOutputBanner(output, focus){
             const days = document.getElementById('trainingDays').value;
             const reps = document.getElementById('repRange').value;
