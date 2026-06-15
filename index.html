@@ -249,6 +249,15 @@
 
         /* ════ PRIMARY / EXPORT BUTTONS (in-flow) ════ */
         .button-row { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+        #programState { margin-top: 18px; }
+        .ps-stack { display: flex; flex-direction: column; gap: 10px; }
+        .ps-btn { min-height: var(--tap); border-radius: var(--r); font-family: var(--mono); font-size: 0.92rem; cursor: pointer; padding: 0 16px; border: 1px solid var(--border-bright); transition: border-color .15s, color .15s, filter .15s; }
+        .ps-view { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+        .ps-view:hover { filter: brightness(1.08); }
+        .ps-edit { background: var(--surface-2); color: var(--text); }
+        .ps-edit:hover { border-color: var(--accent); color: var(--accent); }
+        .ps-reset { background: transparent; color: var(--text-muted); }
+        .ps-reset:hover { border-color: var(--accent); color: var(--accent); }
         .generate-btn, .export-btn, .text-btn {
             border: none; font-family: var(--display); letter-spacing: 0.1em; cursor: pointer; border-radius: var(--r);
             transition: transform .12s, box-shadow .2s, filter .15s, background .15s;
@@ -850,6 +859,7 @@
             </div>
         </div>
 
+        <div id="programForm">
         <!-- ── Program Focus ── -->
         <div class="setup-panel" style="margin-top: 30px;">
             <h2 class="section-title">Program Focus</h2>
@@ -1238,10 +1248,21 @@
 
         <div class="button-row">
             <button class="generate-btn" onclick="cmdGenerate()">Generate Program</button>
-            <div class="export-row">
-                <button class="export-btn" id="exportBtn" onclick="exportToPDF()">⤓ Download PDF</button>
-                <button class="text-btn" id="textBtn" onclick="exportToText()">≡ Text / Copy</button>
+        </div>
+        </div><!-- /programForm -->
+
+        <!-- shown on return when a saved program exists -->
+        <div id="programState" style="display:none;">
+            <div class="ps-stack">
+                <button class="ps-btn ps-view" onclick="viewProgram()">View Generated Program</button>
+                <button class="ps-btn ps-edit" onclick="editProgram()">Edit &amp; Regenerate Program</button>
+                <button class="ps-btn ps-reset" onclick="resetProgram()">Reset Program</button>
             </div>
+        </div>
+
+        <div class="export-row" id="exportRow">
+            <button class="export-btn" id="exportBtn" onclick="exportToPDF()">⤓ Download PDF</button>
+            <button class="text-btn" id="textBtn" onclick="exportToText()">≡ Text / Copy</button>
         </div>
 
         <div class="program-output" id="programOutput"></div>
@@ -1327,7 +1348,10 @@
                     <input type="number" id="cal-meals" min="1" max="12" step="1" value="3" oninput="recalcCalories()">
                 </div>
             </div>
-            <button class="generate-btn" onclick="recalcCalories()" style="margin-top:18px;">Calculate Calories</button>
+            <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+                <button class="generate-btn" onclick="recalcCalories()" style="flex:1; min-width:160px; margin-top:0;">Calculate Calories</button>
+                <button class="ps-btn ps-reset" onclick="resetCalories()" style="flex:0 0 auto;">Reset</button>
+            </div>
             <div class="cal-output" id="cal-output"></div>
             </div><!-- /collapsible-content -->
         </div>
@@ -4921,7 +4945,10 @@
         function cmdGenerate(){
             generateProgram();
             const out=document.getElementById('programOutput');
-            if(out && out.classList.contains('visible')) out.scrollIntoView({behavior:'smooth'});
+            if(out && out.classList.contains('visible')){
+                saveProgramSnapshot();
+                out.scrollIntoView({behavior:'smooth'});
+            }
         }
 
         // ---- wire up global listeners once DOM is ready ----
@@ -5003,6 +5030,81 @@
             ['dead','squat','bench','ohp','row','frontsquat','rdl','larsen','pausedead','pausesquat']
                 .forEach(l=>{ try { updateE1RM(l); } catch(e){} });
             try { recalcCalories(); } catch(e){}
+            if(hasSavedProgram()){ try { enterProgramReady(); } catch(e){} }
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           SAVED PROGRAM STATE — once generated, the program's rendered HTML
+           is saved (its own key, not rewritten on keystrokes). Returning to
+           the page then offers View / Edit & Regenerate / Reset instead of
+           forcing a re-generate. Re-injecting the HTML keeps it interactive:
+           week toggles are inline onclick, plate-pops are delegated.
+           ════════════════════════════════════════════════════════════════ */
+        const PROGRAM_KEY = 'rpe_program_v1';
+
+        function saveProgramSnapshot(){
+            const out = document.getElementById('programOutput');
+            if(out && out.classList.contains('visible') && out.querySelector('.week-block')){
+                try { storeSet(PROGRAM_KEY, out.innerHTML); } catch(e){}
+            }
+        }
+        function hasSavedProgram(){
+            try { const h = storeGet(PROGRAM_KEY); return !!(h && h.indexOf('week-block') !== -1); } catch(e){ return false; }
+        }
+        function hideExportButtons(){
+            ['exportBtn','textBtn'].forEach(id=>{ const b = document.getElementById(id); if(b) b.classList.remove('visible'); });
+        }
+        function showExportButtons(){
+            ['exportBtn','textBtn'].forEach(id=>{ const b = document.getElementById(id); if(b) b.classList.add('visible'); });
+        }
+        function enterProgramReady(){      // on load, when a saved program exists
+            const form  = document.getElementById('programForm');
+            const state = document.getElementById('programState');
+            const out   = document.getElementById('programOutput');
+            if(form)  form.style.display  = 'none';
+            if(state) state.style.display = '';
+            if(out){ out.innerHTML = ''; out.classList.remove('visible'); }
+            hideExportButtons();
+        }
+        function viewProgram(){
+            let html = null;
+            try { html = storeGet(PROGRAM_KEY); } catch(e){}
+            if(!html){ showToast('No saved program'); return; }
+            const out = document.getElementById('programOutput');
+            if(out){
+                out.innerHTML = html;
+                out.classList.add('visible');
+                showExportButtons();
+                revealCmdBar();
+                out.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        function editProgram(){
+            const form  = document.getElementById('programForm');
+            const state = document.getElementById('programState');
+            if(state) state.style.display = 'none';
+            if(form){ form.style.display = ''; form.scrollIntoView({ behavior: 'smooth' }); }
+        }
+        function resetProgram(){
+            try { if(window.localStorage) localStorage.removeItem(PROGRAM_KEY); } catch(e){}
+            const out   = document.getElementById('programOutput');
+            const form  = document.getElementById('programForm');
+            const state = document.getElementById('programState');
+            if(out){ out.innerHTML = ''; out.classList.remove('visible'); }
+            hideExportButtons();
+            if(state) state.style.display = 'none';
+            if(form)  form.style.display  = '';
+            showToast('Program reset');
+        }
+
+        function resetCalories(){
+            const defs = { 'cal-sex':'male', 'cal-activity':'moderate', 'cal-goal':'maintain', 'cal-meals':'3' };
+            ['cal-age','cal-height','cal-weight'].forEach(id=>{ const el = document.getElementById(id); if(el) el.value = ''; });
+            Object.keys(defs).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = defs[id]; });
+            __mealShares = [];
+            const out = document.getElementById('cal-output'); if(out) out.innerHTML = '';
+            saveState();
+            showToast('Calorie inputs cleared');
         }
 
         /* ════════════════════════════════════════════════════════════════
