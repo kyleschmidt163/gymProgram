@@ -432,6 +432,23 @@
         }
         .section-divider { height: 1px; background: var(--border); margin: 10px 0; }
 
+        /* ── m(ASS) Builder+ additions: "Don't know" toggle + deep-core day styling ── */
+        .dunno-btn {
+            display: none; margin-top: 8px; background: var(--bg-2);
+            border: 1px solid var(--border-bright); color: var(--text-dim);
+            font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 7px 14px; border-radius: var(--r); cursor: pointer; min-height: 38px;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .dunno-btn.show { display: inline-block; }
+        .dunno-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+        .lift-input-block.dunno-on .lift-inputs,
+        .lift-input-block.dunno-on .e1rm-display { opacity: 0.32; pointer-events: none; }
+        .day-block.core-block { border-color: var(--purple); border-left: var(--rail) solid var(--purple); }
+        .day-block.core-block .day-title { color: var(--purple); }
+        .day-block.core-block .day-title::before { color: var(--purple); }
+        .exercise-name.core { color: var(--purple); font-weight: 600; }
+
         /* ════ INFO BOX ════ */
         .info-box {
             background: var(--surface); border: 1px solid var(--border);
@@ -655,7 +672,7 @@
         <header>
             <h1>RPE <span class="hot">Program</span> Generator</h1>
             <p class="header-tag" style="margin-top:10px;">Direct all questions to <a href="https://instagram.com/kyleschmidt__" target="_blank">kyleschmidt__ @ instagram</a></p>
-            <p style="margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;color:var(--text-muted);">v1.93</p>
+            <p style="margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;color:var(--text-muted);">v1.94</p>
         </header>
 
         <div class="collapsible-section">
@@ -891,6 +908,7 @@
                     <option value="shoulder_growth">Bodybuilding — Shoulder Growth Focus</option>
                     <option value="bulgarian_lite">Bulgarian Lite — High Frequency</option>
                     <option value="mass_builder">m(ASS) Builder — Glute Focus</option>
+                    <option value="mass_builder_plus">m(ASS) Builder+ — Ab &amp; Glute Dominant</option>
                     <option value="peaking_block">Peaking Block — 4 Week Meet Prep</option>
                     <option value="advanced_rpe">Powerlifting — Advanced RPE 4 Day</option>
                     <option value="powerlifting">Powerlifting — Sub Max RPE</option>
@@ -970,6 +988,7 @@
             <!-- Squat -->
             <div class="lift-input-block" id="squatBlock">
                 <div class="lift-name" id="squatLiftName">Squat</div>
+                <button type="button" class="dunno-btn" id="squat-dunno" onclick="toggleDunno('squat')">Don't know</button>
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
@@ -1134,6 +1153,7 @@
             <!-- RDL -->
             <div class="lift-input-block" id="rdlBlock">
                 <div class="lift-name optional" id="rdlLiftName">Romanian Deadlift<span class="optional-tag" id="rdlOptionalTag">(for Squat day)</span><span class="required-tag" id="rdlRequiredTag" style="display:none;">★ Required for m(<strong style="color:var(--accent)">ASS</strong>) Builder</span></div>
+                <button type="button" class="dunno-btn" id="rdl-dunno" onclick="toggleDunno('rdl')">Don't know</button>
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
@@ -1191,7 +1211,8 @@
 
             <!-- Glute Bridge Weight (m(ASS) Builder only) -->
             <div class="lift-input-block" id="gluteBridgeBlock" style="display:none;">
-                <div class="lift-name required-field">Glute Bridge Weight<span class="required-tag">★ Required for m(<strong style="color:var(--accent)">ASS</strong>) Builder</span></div>
+                <div class="lift-name required-field">Glute Bridge Weight<span class="required-tag" id="gluteRequiredTag">★ Required for m(<strong style="color:var(--accent)">ASS</strong>) Builder</span></div>
+                <button type="button" class="dunno-btn" id="glutebridge-dunno" onclick="toggleDunno('glutebridge')">Don't know</button>
                 <div class="lift-inputs" style="grid-template-columns:1fr;">
                     <div class="input-group">
                         <label>Weight across hips (kg) — barbell, plate, or machine</label>
@@ -1473,6 +1494,22 @@
             }
         }
 
+        // ── "Don't know" toggles (used by m(ASS) Builder+) ──────────────────────
+        // Each flag, when on, makes that lift prescribe by-feel / bodyweight instead
+        // of a calculated weight. Default off. Only shown for mass_builder_plus.
+        const dunnoState = { squat: false, rdl: false, glutebridge: false };
+        function toggleDunno(lift) {
+            dunnoState[lift] = !dunnoState[lift];
+            const btn = document.getElementById(lift + '-dunno');
+            const block = document.getElementById(lift === 'glutebridge' ? 'gluteBridgeBlock' : lift + 'Block');
+            if (btn) {
+                btn.classList.toggle('active', dunnoState[lift]);
+                btn.textContent = dunnoState[lift] ? "Don't know ✓" : "Don't know";
+            }
+            if (block) block.classList.toggle('dunno-on', dunnoState[lift]);
+            try { saveStateSoon(); } catch (e) {}
+        }
+
         // ── Lift Substitution Data ───────────────────────────────────────────────
         const liftSubstitutions = [
             {
@@ -1498,7 +1535,7 @@
                 programs: [
                     {focus:'powerlifting',days:'4'},{focus:'bodybuilding',days:'4'},
                     {focus:'benchmax'},{focus:'shoulder_growth'},{focus:'arm_growth'},
-                    {focus:'leg_growth'},{focus:'advanced_rpe'},{focus:'mass_builder'}
+                    {focus:'leg_growth'},{focus:'advanced_rpe'},{focus:'mass_builder'},{focus:'mass_builder_plus'}
                 ]
             },
             {
@@ -1689,6 +1726,7 @@
                 beginner_machine: 'Beginner -- Machine Only',
                 rpe_cutting: 'RPE Cutting -- Maintenance',
                 mass_builder: 'm(ASS) Builder -- Glute Focus',
+                mass_builder_plus: 'm(ASS) Builder+ -- Ab & Glute Dominant',
                 peaking_block: 'Peaking Block -- 4 Week Meet Prep',
                 bulgarian_lite: 'Bulgarian Lite -- High Frequency',
                 shoulder_growth: 'Bodybuilding -- Shoulder Growth Focus',
@@ -1737,6 +1775,7 @@
                         if (nameEl.classList.contains('main'))      prefix = '  * ';
                         else if (nameEl.classList.contains('backoff'))   prefix = '  > ';
                         else if (nameEl.classList.contains('secondary')) prefix = '  > ';
+                        else if (nameEl.classList.contains('core'))      prefix = '  + ';
                         else if (nameEl.classList.contains('superset'))  prefix = ' SS ';
 
                         let name = nameEl.childNodes[0] ? nameEl.childNodes[0].textContent.trim() : nameEl.textContent.trim();
@@ -1825,6 +1864,7 @@
             const rdlReqTag     = document.getElementById('rdlRequiredTag');
             const rdlName       = document.getElementById('rdlLiftName');
             const ohpName       = document.getElementById('ohpLiftName');
+            const gluteReqTag   = document.getElementById('gluteRequiredTag');
 
             // ── Defaults reset ──
             rdlOptTag.style.display = '';
@@ -1833,6 +1873,7 @@
             rdlName.classList.add('optional');
             ohpName.textContent = 'Push Press / OHP';
             gluteBlock.style.display = 'none';
+            if (gluteReqTag) gluteReqTag.style.display = '';
             ['deadBlock','squatBlock','benchBlock','ohpBlock'].forEach(id => document.getElementById(id).style.display = '');
 
             // ── Per-program rules ──
@@ -1864,6 +1905,9 @@
                                     hiddenMain: [],
                                     visibleSec: [] },
                 mass_builder:     { showDays: false, showRepRange: false, showProgress: true,  showLifts: true,
+                                    hiddenMain: ['deadBlock','benchBlock','ohpBlock'],
+                                    visibleSec: ['rdlBlock'] },
+                mass_builder_plus:{ showDays: false, showRepRange: false, showProgress: true,  showLifts: true,
                                     hiddenMain: ['deadBlock','benchBlock','ohpBlock'],
                                     visibleSec: ['rdlBlock'] },
                 peaking_block:    { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
@@ -1933,6 +1977,35 @@
                     }
                 }
             }
+            if (focus === 'mass_builder_plus') {
+                // Glute Bridge is OPTIONAL here (not required) — show the block, drop the
+                // "required" tag, and open the secondary section so RDL + Glute Bridge show.
+                gluteBlock.style.display = 'block';
+                if (gluteReqTag) gluteReqTag.style.display = 'none';
+                const secContent = document.getElementById('rdlBlock').closest('.collapsible-content');
+                if (secContent && !secContent.classList.contains('open')) {
+                    const secHeader = secContent.previousElementSibling;
+                    secContent.classList.add('open');
+                    if (secHeader) {
+                        secHeader.classList.add('open');
+                        const arrow = secHeader.querySelector('.toggle-arrow');
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            }
+
+            // ── "Don't know" toggle buttons — only for m(ASS) Builder+ ──
+            ['squat','rdl','glutebridge'].forEach(l => {
+                const b = document.getElementById(l + '-dunno');
+                if (focus === 'mass_builder_plus') {
+                    if (b) b.classList.add('show');
+                } else {
+                    if (b) { b.classList.remove('show'); b.classList.remove('active'); b.textContent = "Don't know"; }
+                    dunnoState[l] = false;
+                    const blk = document.getElementById(l === 'glutebridge' ? 'gluteBridgeBlock' : l + 'Block');
+                    if (blk) blk.classList.remove('dunno-on');
+                }
+            });
 
             // Pause deadlift / pause squat — advanced_rpe only
             const pauseDeadBlock = document.getElementById('pauseDeadBlock');
@@ -1987,6 +2060,7 @@
                 bodybuilding: 'Bodybuilding — RPE Compound Focus', powerlifting: 'Powerlifting — Sub Max RPE',
                 benchmax: 'Bench Max — 4 Day', beginner_machine: 'Beginner — Machine Only',
                 rpe_cutting: 'RPE Cutting — Maintenance', mass_builder: 'm(ASS) Builder — Glute Focus',
+                mass_builder_plus: 'm(ASS) Builder+ — Ab & Glute Dominant',
                 peaking_block: 'Peaking Block — 4 Week Meet Prep', bulgarian_lite: 'Bulgarian Lite — High Frequency',
                 shoulder_growth: 'Bodybuilding — Shoulder Growth Focus', arm_growth: 'Bodybuilding — Arm Growth Focus',
                 leg_growth: 'Bodybuilding — Leg Growth Focus', advanced_rpe: 'Powerlifting — Advanced RPE 4 Day'
@@ -2101,6 +2175,7 @@
                 beginner_machine: 'Beginner — Machine Only',
                 rpe_cutting: 'RPE Cutting — Maintenance',
                 mass_builder: 'm(ASS) Builder — Glute Focus',
+                mass_builder_plus: 'm(ASS) Builder+ — Ab & Glute Dominant',
                 peaking_block: 'Peaking Block — 4 Week Meet Prep',
                 bulgarian_lite: 'Bulgarian Lite — High Frequency',
                 shoulder_growth: 'Bodybuilding — Shoulder Growth Focus',
@@ -2229,6 +2304,7 @@
             const isBenchMax    = focus === 'benchmax';
             const isCutting     = focus === 'rpe_cutting';
             const isMassBuilder = focus === 'mass_builder';
+            const isMassBuilderPlus = focus === 'mass_builder_plus';
             const isPeaking     = focus === 'peaking_block';
             const isBulgarian   = focus === 'bulgarian_lite';
             const isShoulderGrowth = focus === 'shoulder_growth';
@@ -2246,6 +2322,7 @@
             if (isBeginner)            requiredLifts = [];
             else if (isBenchMax)       requiredLifts = ['bench', 'squat', 'dead'];
             else if (isMassBuilder)    requiredLifts = ['squat'];
+            else if (isMassBuilderPlus) requiredLifts = [];
             else if (isPeaking)        requiredLifts = ['squat', 'bench', 'dead'];
             else if (isBulgarian)      requiredLifts = ['squat', 'bench'];
             else if (isShoulderGrowth) requiredLifts = fourDay ? ['dead', 'squat', 'ohp', 'bench'] : ['dead', 'ohp', 'bench'];
@@ -2298,12 +2375,22 @@
             const targetReps     = parseInt(document.getElementById('repRange').value || '5');
             const gluteBridgeW   = parseFloat(document.getElementById('glutebridge-weight').value) || null;
 
+            // m(ASS) Builder+ — honour the "Don't know" toggles: drop the calculated
+            // weight for any lift marked unknown so the builder falls back to by-feel.
+            if (isMassBuilderPlus) {
+                if (dunnoState.squat) delete e1rms.squat;
+                if (dunnoState.rdl) delete e1rms.rdl;
+            }
+
             let html = '';
 
             if (isCutting) {
                 html = buildCuttingProgram(e1rms, days);
             } else if (isMassBuilder) {
                 html = buildMassBuilderProgram(e1rms, gluteBridgeW, progressGoal);
+            } else if (isMassBuilderPlus) {
+                const gbwPlus = dunnoState.glutebridge ? null : gluteBridgeW;
+                html = buildMassBuilderPlusProgram(e1rms, dunnoState, gbwPlus, progressGoal);
             } else if (isPeaking) {
                 html = buildPeakingProgram(e1rms);
             } else if (isBulgarian) {
@@ -3171,6 +3258,172 @@
                     <span class="exercise-name superset">Barbell Skull Crusher<span class="superset-label">Superset</span></span>
                     <span class="exercise-prescription">${sets}×15</span>
                 </div>
+            </div>`;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  m(ASS) Builder+ — Ab & Glute Dominant
+        //  Postpartum-oriented (assumes well past C-section recovery). Built on deep
+        //  core / anti-movement work rather than crunches, plus glute & posterior
+        //  chain volume to improve pelvic position. Squat / RDL / Glute Bridge are
+        //  OPTIONAL: enter a number and they're loaded like m(ASS) Builder; tap
+        //  "Don't know" (or leave blank) and they're prescribed by feel / bodyweight.
+        // ════════════════════════════════════════════════════════════════════════
+
+        function buildMassBuilderPlusProgram(e1rms, dunno, gluteBridgeW, progressionGoal) {
+            const mbRPE    = [7, 8, 8.5, 9];
+            const mbBadges = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
+            let html = '';
+
+            for (let w = 0; w < 4; w++) {
+                const rpe = mbRPE[w];
+                const isWeek4 = w === 3;
+                html += `
+                    <div class="week-block week-${w+1}">
+                        <div class="week-header" onclick="toggleWeek(this)">
+                            <span>Week ${w+1}</span>
+                            <span class="rpe-badge">${mbBadges[w]}</span>
+                            <span class="toggle-arrow">▼</span>
+                        </div>
+                        <div class="week-content ${w===0?'open':''}">
+                            ${mbpWeek(e1rms, rpe, false, isWeek4, progressionGoal, dunno, gluteBridgeW)}
+                        </div>
+                    </div>`;
+            }
+
+            // Week 5 — Deload
+            html += `
+                <div class="week-block week-5">
+                    <div class="week-header" onclick="toggleWeek(this)">
+                        <span>Week 5 — Deload</span>
+                        <span class="rpe-badge">RPE 6</span>
+                        <span class="toggle-arrow">▼</span>
+                    </div>
+                    <div class="week-content">
+                        ${mbpWeek(e1rms, 6, true, false, progressionGoal, dunno, gluteBridgeW)}
+                    </div>
+                </div>`;
+
+            html += `<div class="info-box">
+                <strong>m(<span style="color:var(--accent)">ASS</span>) Builder+ — Ab &amp; Glute Dominant (5 weeks):</strong>
+                A 4-day block built to tighten the midsection. The honest mechanics: you can't spot-reduce belly fat — a flatter
+                look comes from three things working together. (1) <strong>Deep-core tone</strong> — the transversus abdominis is
+                the layer that pulls the waist in, trained here with dead bugs, Pallof presses, carries and bird dogs rather than
+                crunches. (2) <strong>Lower overall body fat</strong> — handled by a mild deficit (use the Calorie &amp; Meal
+                Calculator further down). (3) <strong>Pelvic position</strong> — strong glutes pull the pelvis out of the forward
+                tilt that pushes the lower belly out, so glute and hamstring volume is built into every week.
+                <br><br>
+                Squat, RDL and Glute Bridge are optional. Enter a number and they're loaded on the usual RPE climb
+                (7 → 8 → 8.5 → 9); tap <strong>Don't know</strong> (or leave them blank) and they're prescribed by feel and
+                bodyweight — the right starting point if you're not sure of your numbers. Everything else is fixed volume.
+                Week 5 is a deload.
+                <br><br>
+                <strong>One self-check:</strong> if your belly visibly cones or domes into a ridge down the middle during an ab
+                exercise, regress it (easier variation, fewer reps). That's a sign the deep core isn't managing the load yet, and
+                pushing through it works against a flatter midsection rather than for it.
+            </div>`;
+            return html;
+        }
+
+        function mbpWeek(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW) {
+            return mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW)
+                 + mbpDay2(isDeload)
+                 + mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno)
+                 + mbpDay4(isDeload, dunno, gbW);
+        }
+
+        // A main-lift block that is EITHER calculated (number known + not "don't know")
+        // OR a by-feel prescription if the number is unknown/blank.
+        function mbpMainRows(name, e1rm, isUnknown, repTarget, rpe, isDeload, isWeek4, progressionGoal, feelName, feelPresc) {
+            if (e1rm && !isUnknown) {
+                let top = roundToPlate(calculateWeight(e1rm, repTarget, rpe));
+                if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
+                const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
+                const backoff  = roundToPlate(top * backoffPercent);
+                const boffSets = isDeload ? 1 : 2;
+                return `
+                    <div class="exercise-row">
+                        <span class="exercise-name main">${name}<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'} · RPE ${rpe}</span></span>
+                        <span class="exercise-prescription">1×${isAmrap?'AMRAP':repTarget} @ <span class="weight">${top}kg</span></span>
+                    </div>
+                    <div class="exercise-row">
+                        <span class="exercise-name backoff">${name}<span class="exercise-label">Back-off</span></span>
+                        <span class="exercise-prescription">${boffSets}×${repTarget} @ <span class="weight">${backoff}kg</span></span>
+                    </div>`;
+            }
+            const sets = isDeload ? 2 : 3;
+            return `
+                <div class="exercise-row">
+                    <span class="exercise-name main">${feelName}<span class="exercise-label">By feel · last 2 reps should be hard</span></span>
+                    <span class="exercise-prescription">${sets}×${feelPresc}</span>
+                </div>`;
+        }
+
+        // ── Day 1: Glutes + Deep Core ──
+        function mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW) {
+            const sets = isDeload ? 2 : 3;
+            const squatRows = mbpMainRows('Squat', e1rms.squat, dunno.squat, 8, rpe, isDeload, isWeek4, progressionGoal, 'Goblet Squat', '10-12');
+            const hipThrust = gbW
+                ? `<div class="exercise-row"><span class="exercise-name secondary">Hip Thrust / Glute Bridge</span><span class="exercise-prescription">${sets}×10-12 @ <span class="weight">${gbW}kg</span></span></div>`
+                : `<div class="exercise-row"><span class="exercise-name secondary">Hip Thrust / Glute Bridge<span class="exercise-label">bodyweight — add load when easy</span></span><span class="exercise-prescription">${sets}×12-15</span></div>`;
+            return `<div class="day-block core-block">
+                <div class="day-title">Day 1: Glutes &amp; Deep Core${isDeload?' (Deload)':''}</div>
+                ${squatRows}
+                ${hipThrust}
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name core">Dead Bug<span class="exercise-label">slow · keep lower back flat</span></span><span class="exercise-prescription">${sets}×8-10 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Pallof Press<span class="exercise-label">anti-rotation · don't twist</span></span><span class="exercise-prescription">${sets}×10 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Bird Dog</span><span class="exercise-prescription">${sets}×8 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Side Plank</span><span class="exercise-prescription">${sets}×20-40s / side</span></div>
+            </div>`;
+        }
+
+        // ── Day 2: Upper body (efficient) + Loaded Core ──
+        function mbpDay2(isDeload) {
+            const sets = isDeload ? 2 : 3;
+            return `<div class="day-block">
+                <div class="day-title">Day 2: Upper Body + Loaded Core${isDeload?' (Deload)':''}</div>
+                <div class="exercise-row"><span class="exercise-name main">DB Shoulder Press</span><span class="exercise-prescription">${sets}×10-12</span></div>
+                <div class="exercise-row"><span class="exercise-name secondary">DB Row or Lat Pulldown</span><span class="exercise-prescription">${sets}×10-12</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name secondary">Push-Up or DB Bench Press</span><span class="exercise-prescription">${sets}×10-12</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Face Pull</span><span class="exercise-prescription">${sets}×15</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name core">Suitcase Carry<span class="exercise-label">load one side only · stay tall</span></span><span class="exercise-prescription">${sets}×20-30m / side</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Stir-the-Pot / Plank<span class="exercise-label">on a ball, or a straight plank hold</span></span><span class="exercise-prescription">${sets}×8 / dir (or 30s)</span></div>
+            </div>`;
+        }
+
+        // ── Day 3: Hamstrings / Glutes + Anti-Rotation ──
+        function mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno) {
+            const sets = isDeload ? 2 : 3;
+            const rdlRows = mbpMainRows('RDL', e1rms.rdl, dunno.rdl, 8, rpe, isDeload, isWeek4, progressionGoal, 'DB Romanian Deadlift', '10-12');
+            return `<div class="day-block core-block">
+                <div class="day-title">Day 3: Hamstrings, Glutes &amp; Anti-Rotation${isDeload?' (Deload)':''}</div>
+                ${rdlRows}
+                <div class="exercise-row"><span class="exercise-name secondary">Bulgarian Split Squat</span><span class="exercise-prescription">${sets}×10 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Single-Leg Glute Bridge<span class="exercise-label">3s negative</span></span><span class="exercise-prescription">${sets}×12 / side</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name core">Cable / Band Chop<span class="exercise-label">anti-rotation</span></span><span class="exercise-prescription">${sets}×10 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Hollow Hold<span class="exercise-label">knees bent → straighten over weeks · stop if it domes</span></span><span class="exercise-prescription">${sets}×20-30s</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Banded Lateral Walk</span><span class="exercise-prescription">${sets}×15 / side</span></div>
+            </div>`;
+        }
+
+        // ── Day 4: Glute Hypertrophy + Loaded Core ──
+        function mbpDay4(isDeload, dunno, gbW) {
+            const sets = isDeload ? 2 : 3;
+            const hipThrust = gbW
+                ? `<div class="exercise-row"><span class="exercise-name main">Hip Thrust<span class="exercise-label">heavier than Day 1</span></span><span class="exercise-prescription">${sets}×8-10 @ <span class="weight">${gbW}kg</span></span></div>`
+                : `<div class="exercise-row"><span class="exercise-name main">Hip Thrust / Glute Bridge<span class="exercise-label">bodyweight — pause &amp; squeeze at top</span></span><span class="exercise-prescription">${sets}×12-15</span></div>`;
+            return `<div class="day-block core-block">
+                <div class="day-title">Day 4: Glute Hypertrophy + Loaded Core${isDeload?' (Deload)':''}</div>
+                ${hipThrust}
+                <div class="exercise-row"><span class="exercise-name secondary">Step-Up<span class="exercise-label">tall step · drive through heel</span></span><span class="exercise-prescription">${sets}×10 / side</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Cable Kickback / Frog Pump</span><span class="exercise-prescription">${sets}×15</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name core">Bear Crawl / Bear Hold<span class="exercise-label">knees 1 inch off the floor</span></span><span class="exercise-prescription">${sets}×20-30s</span></div>
+                <div class="exercise-row"><span class="exercise-name core">Farmer's Carry<span class="exercise-label">heavy · brace the whole trunk</span></span><span class="exercise-prescription">${sets}×30-40m</span></div>
             </div>`;
         }
 
@@ -4859,6 +5112,7 @@
             beginner_machine:'Beginner · Machine Only', benchmax:'Bench Max · 4 Day',
             arm_growth:'Arm Growth', leg_growth:'Leg Growth', bodybuilding:'RPE Compound',
             shoulder_growth:'Shoulder Growth', bulgarian_lite:'Bulgarian Lite', mass_builder:'m(ASS) Builder',
+            mass_builder_plus:'m(ASS) Builder+',
             peaking_block:'Peaking Block', advanced_rpe:'Advanced RPE', powerlifting:'Sub-Max RPE',
             rpe_cutting:'RPE Cutting'
         };
@@ -4871,6 +5125,7 @@
             shoulder_growth: 'A hypertrophy block emphasising the delts — added pressing and lateral/rear volume — over RPE-driven main lifts.',
             bulgarian_lite: 'A lighter take on the Bulgarian method: high frequency, working up to a daily top set on the main lifts. Demanding — best for experienced lifters who recover well.',
             mass_builder: 'Posterior-chain hypertrophy weighted toward the glutes, with hip-hinge and bridge volume alongside the main lifts.',
+            mass_builder_plus: 'Ab & glute focused, postpartum-oriented: deep-core and anti-rotation work (not crunches) plus glute volume to flatten and tighten the midsection. Squat, RDL and Glute Bridge are optional — tap "Don\u2019t know" and they switch to by-feel/bodyweight.',
             peaking_block: 'A four-week meet-prep peak. RPE climbs and reps drop week to week to sharpen the squat, bench and deadlift toward a one-rep-max attempt, finishing with a taper.',
             advanced_rpe: 'Auto-regulated powerlifting for experienced lifters — top sets and back-offs set by RPE rather than fixed percentages. 4 days a week.',
             powerlifting: 'Submaximal RPE strength work for the big three — builds the squat, bench and deadlift while staying short of grinding maximal sets.',
@@ -5031,6 +5286,7 @@
             }
             o.__theme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
             o.__mealShares = Array.isArray(__mealShares) ? __mealShares.slice() : [];
+            o.__dunno = { squat: !!dunnoState.squat, rdl: !!dunnoState.rdl, glutebridge: !!dunnoState.glutebridge };
             return o;
         }
         function applyState(o){
@@ -5046,6 +5302,15 @@
         function saveState(){ try { storeSet(PERSIST_KEY, JSON.stringify(collectState())); } catch(e){} }
         let __saveTimer = null;
         function saveStateSoon(){ clearTimeout(__saveTimer); __saveTimer = setTimeout(saveState, 250); }
+
+        // Restore the m(ASS) Builder+ "Don't know" toggles from a saved/backup object.
+        // Only applies when that program is selected (the buttons exist + are shown).
+        function restoreDunno(src){
+            if(!src || !src.__dunno || src.accessoryFocus !== 'mass_builder_plus') return;
+            ['squat','rdl','glutebridge'].forEach(l=>{
+                if(src.__dunno[l]){ dunnoState[l] = false; try { toggleDunno(l); } catch(e){} }
+            });
+        }
 
         function restoreState(){
             let saved = null;
@@ -5063,6 +5328,7 @@
             }
             try { handleFocusChange(); } catch(e){}      // builds substitution selects for the restored program
             if(saved) applyState(saved);                 // restore everything else (subs + calorie fields)
+            restoreDunno(saved);                         // re-apply "Don't know" toggles for m(ASS) Builder+
             // programmatic .value doesn't fire onchange, so re-sync the substitution labels
             try { liftSubstitutions.forEach(g=>{ try { onSubChange(g.id); } catch(e){} }); } catch(e){}
             ['dead','squat','bench','ohp','row','frontsquat','rdl','larsen','pausedead','pausesquat']
@@ -5275,6 +5541,7 @@
                 if(Array.isArray(o.__mealShares)) __mealShares = o.__mealShares.slice();
                 try { handleFocusChange(); } catch(e){}
                 applyState(o);
+                restoreDunno(o);
                 try { liftSubstitutions.forEach(g=>{ try { onSubChange(g.id); } catch(e){} }); } catch(e){}
                 ['dead','squat','bench','ohp','row','frontsquat','rdl','larsen','pausedead','pausesquat']
                     .forEach(l=>{ try { updateE1RM(l); } catch(e){} });
