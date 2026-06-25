@@ -195,6 +195,7 @@
 
         /* ════ LIFT INPUT BLOCKS ════ */
         .lift-input-block {
+            position: relative;
             background: var(--bg-2);
             border: 1px solid var(--border);
             border-left: var(--rail) solid var(--border-bright);
@@ -433,15 +434,30 @@
         .section-divider { height: 1px; background: var(--border); margin: 10px 0; }
 
         /* ── m(ASS) Builder+ additions: "Don't know" toggle + deep-core day styling ── */
+        /* compact pill toggle, anchored top-right beside the lift name */
         .dunno-btn {
-            display: none; margin-top: 8px; background: var(--bg-2);
-            border: 1px solid var(--border-bright); color: var(--text-dim);
-            font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
-            padding: 7px 14px; border-radius: var(--r); cursor: pointer; min-height: 38px;
+            display: none; position: absolute; top: 12px; right: 12px;
+            align-items: center; gap: 6px;
+            background: transparent; border: 1px solid var(--border-bright);
+            color: var(--text-muted); font-family: var(--mono);
+            font-size: 0.6rem; letter-spacing: 0.05em; text-transform: uppercase;
+            padding: 8px 12px 8px 10px; border-radius: 999px; cursor: pointer;
+            line-height: 1; white-space: nowrap; -webkit-tap-highlight-color: transparent;
             transition: background .15s, color .15s, border-color .15s;
         }
-        .dunno-btn.show { display: inline-block; }
-        .dunno-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+        .dunno-btn.show { display: inline-flex; }
+        .dunno-btn::before {
+            content: ''; width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto;
+            border: 1px solid var(--text-muted); background: transparent;
+            transition: background .15s, border-color .15s;
+        }
+        .dunno-btn:hover { border-color: var(--text-dim); color: var(--text-dim); }
+        .dunno-btn.active {
+            background: rgba(255,23,68,0.12); border-color: var(--accent); color: var(--accent);
+        }
+        .dunno-btn.active::before { background: var(--accent); border-color: var(--accent); }
+        /* reserve space so a long lift name never runs under the pill */
+        .lift-input-block:has(.dunno-btn.show) .lift-name { padding-right: 108px; }
         .lift-input-block.dunno-on .lift-inputs,
         .lift-input-block.dunno-on .e1rm-display { opacity: 0.32; pointer-events: none; }
         .day-block.core-block { border-color: var(--purple); border-left: var(--rail) solid var(--purple); }
@@ -1504,7 +1520,6 @@
             const block = document.getElementById(lift === 'glutebridge' ? 'gluteBridgeBlock' : lift + 'Block');
             if (btn) {
                 btn.classList.toggle('active', dunnoState[lift]);
-                btn.textContent = dunnoState[lift] ? "Don't know ✓" : "Don't know";
             }
             if (block) block.classList.toggle('dunno-on', dunnoState[lift]);
             try { saveStateSoon(); } catch (e) {}
