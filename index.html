@@ -2436,6 +2436,31 @@
                 ['squat','bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
             }
 
+            // Make the "Don't know" toggle load-bearing: for the programs that show
+            // it, a blank lift is only treated as by-feel when the user has explicitly
+            // tapped "Don't know". A blank field that wasn't toggled is incomplete —
+            // prompt for it rather than silently defaulting (which made the toggle do
+            // nothing in its main use case).
+            {
+                const __toggleLifts = ({
+                    beginner_freeweights: ['squat','bench','dead','ohp'],
+                    arnold_golden6:       ['squat','bench','ohp'],
+                    mass_builder_plus:    ['squat','rdl','glutebridge']
+                })[focus];
+                if (__toggleLifts) {
+                    const __names = { squat:'Squat', bench:'Bench Press', dead:'Deadlift', ohp:'Overhead Press', rdl:'RDL', glutebridge:'Glute Bridge' };
+                    const __missing = __toggleLifts.filter(k => {
+                        const el = document.getElementById(k + '-weight');
+                        const blank = !el || el.value === '' || isNaN(parseFloat(el.value));
+                        return blank && !dunnoState[k];
+                    });
+                    if (__missing.length) {
+                        alert('For ' + __missing.map(k => __names[k]).join(', ') + ': enter a weight, or tap \u201cDon\u2019t know\u201d to train it by feel.');
+                        return;
+                    }
+                }
+            }
+
             let html = '';
 
             if (isBeginnerFW) {
@@ -3378,7 +3403,7 @@
                 tilt that pushes the lower belly out, so glute and hamstring volume is built into every week.
                 <br><br>
                 Squat, RDL and Glute Bridge are optional. Enter a number and they're loaded on the usual RPE climb
-                (7 → 8 → 8.5 → 9); tap <strong>Don't know</strong> (or leave them blank) and they're prescribed by feel and
+                (7 → 8 → 8.5 → 9); tap <strong>Don't know</strong> and they're prescribed by feel and
                 bodyweight — the right starting point if you're not sure of your numbers. Everything else is fixed volume.
                 Week 5 is a deload.
                 <br><br>
@@ -3457,7 +3482,7 @@
                 <div class="day-title">Day 1: Squat${isDeload ? ' (Deload)' : ''}</div>
                 ${bfwMainRows('Squat', 'squat', weekIndex, isDeload, isAmrap)}
                 <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name accessory">Goblet Squat or Leg Press</span><span class="exercise-prescription">${sets}×12</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Leg Press</span><span class="exercise-prescription">${sets}×12</span></div>
                 <div class="exercise-row"><span class="exercise-name accessory">DB Walking Lunge</span><span class="exercise-prescription">${sets}×10 / side</span></div>
                 <div class="exercise-row"><span class="exercise-name accessory">Hanging Leg Raises or Plank</span><span class="exercise-prescription">${sets}×Max</span></div>
             </div>`;
@@ -3470,8 +3495,10 @@
                 ${bfwMainRows('Bench Press', 'bench', weekIndex, isDeload, isAmrap)}
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name accessory">DB Bench or Incline DB Press</span><span class="exercise-prescription">${sets}×10</span></div>
-                <div class="exercise-row"><span class="exercise-name accessory">DB Row</span><span class="exercise-prescription">${sets}×10 / side</span></div>
-                <div class="exercise-row"><span class="exercise-name accessory">DB Curl</span><span class="exercise-prescription">${sets}×12</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Machine Row</span><span class="exercise-prescription">${sets}×10</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name superset">DB Curl<span class="superset-label">Superset</span></span><span class="exercise-prescription">${sets}×12</span></div>
+                <div class="exercise-row"><span class="exercise-name superset">Tricep Rope Pressdown<span class="superset-label">Superset</span></span><span class="exercise-prescription">${sets}×12</span></div>
             </div>`;
         }
 
@@ -3481,7 +3508,7 @@
                 <div class="day-title">Day 3: Deadlift${isDeload ? ' (Deload)' : ''}</div>
                 ${bfwMainRows('Deadlift', 'dead', weekIndex, isDeload, isAmrap)}
                 <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name accessory">DB Romanian Deadlift</span><span class="exercise-prescription">${sets}×10</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Hamstring Curl</span><span class="exercise-prescription">${sets}×12</span></div>
                 <div class="exercise-row"><span class="exercise-name accessory">Lat Pulldown or Assisted Pull Up</span><span class="exercise-prescription">${sets}×10</span></div>
                 <div class="exercise-row"><span class="exercise-name accessory">Calf Raises</span><span class="exercise-prescription">${sets}×15</span></div>
             </div>`;
@@ -3493,9 +3520,11 @@
                 <div class="day-title">Day 4: Overhead Press${isDeload ? ' (Deload)' : ''}</div>
                 ${bfwMainRows('Overhead Press', 'ohp', weekIndex, isDeload, isAmrap)}
                 <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name accessory">DB Shoulder Press</span><span class="exercise-prescription">${sets}×10</span></div>
+                <div class="exercise-row"><span class="exercise-name accessory">Lat Pulldown or Assisted Pull Up</span><span class="exercise-prescription">${sets}×10</span></div>
                 <div class="exercise-row"><span class="exercise-name accessory">Lateral Raises</span><span class="exercise-prescription">${sets}×15</span></div>
-                <div class="exercise-row"><span class="exercise-name accessory">Tricep Rope Pressdown</span><span class="exercise-prescription">${sets}×12</span></div>
+                <div class="section-divider"></div>
+                <div class="exercise-row"><span class="exercise-name superset">Barbell Curl<span class="superset-label">Superset</span></span><span class="exercise-prescription">${sets}×12</span></div>
+                <div class="exercise-row"><span class="exercise-name superset">Tricep Rope Pressdown<span class="superset-label">Superset</span></span><span class="exercise-prescription">${sets}×12</span></div>
             </div>`;
         }
 
