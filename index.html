@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#04070a">
+    <meta name="description" content="RPE-based strength program generator — builds multi-week training blocks from your lift numbers.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2304070a'/%3E%3Crect x='6' y='14' width='20' height='4' fill='%23ff1744'/%3E%3Crect x='4' y='9' width='4' height='14' fill='%23ff1744'/%3E%3Crect x='24' y='9' width='4' height='14' fill='%23ff1744'/%3E%3C/svg%3E">
     <title>Gym Program Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
@@ -14,6 +17,7 @@
            Mobile-first. Sharp geometry, hairline rules, one hot accent.
            ════════════════════════════════════════════════════════════════ */
         :root {
+            color-scheme: dark;
             --bg: #04070a;
             --bg-2: #070c10;
             --surface: #0a1116;
@@ -71,6 +75,7 @@
         }
 
         body.light-theme {
+            color-scheme: light;
             --bg: #eef1f6;
             --bg-2: #e6eaf1;
             --surface: #ffffff;
@@ -106,6 +111,13 @@
 
         html { -webkit-text-size-adjust: 100%; }
 
+        /* Solid colours only, through the reliable paint path. iOS WebKit
+           drops body background paint entirely when background-image +
+           attachment:fixed are combined, which left the page on a white
+           canvas in dark mode. The decorative wash isn't worth that risk.
+           html carries a hard fallback so the canvas is never white. */
+        html { background: #04070a; }
+        html:has(body.light-theme) { background: #eef1f6; }
         body {
             font-family: var(--mono);
             background: var(--bg);
@@ -114,50 +126,45 @@
             line-height: 1.55;
             font-size: 15px;
             overflow-x: hidden;
-            background-image:
-                radial-gradient(140% 70% at 50% -10%, rgba(255,23,68,0.06), transparent 60%),
-                repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,23,68,0.010) 3px, rgba(255,23,68,0.010) 4px);
-            background-attachment: fixed;
         }
-        body.light-theme { background-image: radial-gradient(140% 70% at 50% -10%, rgba(196,18,52,0.07), transparent 55%); }
 
         ::selection { background: var(--accent); color: var(--bg); }
 
         .container { max-width: 760px; margin: 0 auto; padding: 22px 14px calc(96px + var(--safe-b)); position: relative; }
         @media (min-width: 760px) { .container { padding-bottom: 48px; } }
 
-        /* ════ HEADER ════ */
+        /* ════ HEADER — unboxed masthead ════ */
         header {
-            text-align: center;
-            margin: 6px 0 18px;
-            padding: 20px 14px 22px;
+            text-align: left;
+            margin: 2px 0 28px;
+            padding: 6px 2px 0;
             position: relative;
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            background:
-                linear-gradient(180deg, var(--surface-2), var(--surface));
-            overflow: hidden;
         }
-        header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.5;
+        .mast-meta {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding: 0 84px 9px 0; margin-bottom: 16px;   /* right padding clears the theme toggle */
+            white-space: nowrap; overflow: hidden;
         }
+        .mast-meta .tick { color: var(--accent); letter-spacing: 0; flex: none; }
         h1 {
             font-family: var(--display);
-            font-size: clamp(2.4rem, 11vw, 3.6rem);
-            letter-spacing: 0.06em; line-height: 0.92;
-            color: var(--text);
-            margin-top: 4px;
+            font-size: clamp(2.7rem, 12.5vw, 5.2rem);
+            letter-spacing: 0.015em; line-height: 0.86;
+            color: var(--text); text-transform: uppercase;
         }
-        h1 .hot { color: var(--accent); text-shadow: 0 0 24px var(--accent-glow); }
-        .header-tag { color: var(--text-muted); font-size: 0.72rem; margin-top: 9px; letter-spacing: 0.04em; }
+        h1 .ghost {
+            display: block;
+            color: var(--accent);
+        }
+        .header-tag {
+            margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+            color: var(--text-muted); font-size: 0.66rem; letter-spacing: 0.05em;
+        }
         .header-tag a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-dim); }
-        .header-rule {
-            display: inline-flex; gap: 7px; align-items: center; margin-top: 11px;
-            font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted);
-        }
-        .header-rule b { color: var(--accent); }
-        .header-rule .dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
+        .header-tag .ver { flex: none; letter-spacing: 0.14em; text-transform: uppercase; }
 
         /* ════ THEME TOGGLE ════ */
         .theme-toggle {
@@ -169,24 +176,33 @@
             transition: background .18s, color .18s, border-color .18s;
         }
         .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+        body.light-theme .theme-toggle { background: rgba(255,255,255,0.75); }
 
-        /* ════ PANELS ════ */
+        /* ════ PANELS — unboxed sections with numbered index ════ */
+        .container { counter-reset: sect; }
         .setup-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--r);
-            padding: 18px 16px; margin-bottom: 14px;
+            background: transparent;
+            border: none; border-top: 1px solid var(--border-bright);
+            border-radius: 0;
+            padding: 18px 0 6px; margin-bottom: 30px;
             position: relative;
+        }
+        .setup-panel::before {
+            content: ''; position: absolute; top: -1px; left: 0;
+            width: 56px; height: 3px; background: var(--accent);
         }
         .section-title {
             font-family: var(--display); font-size: 1.5rem; letter-spacing: 0.08em;
-            color: var(--accent); margin-bottom: 16px; padding-bottom: 10px;
+            color: var(--text); margin-bottom: 16px; padding-bottom: 10px;
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+            display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
         }
         .section-title::before {
-            content: ''; width: 9px; height: 9px; background: var(--accent);
-            box-shadow: 0 0 10px var(--accent); flex: none; transform: translateY(1px);
+            counter-increment: sect;
+            content: counter(sect, decimal-leading-zero);
+            font-size: 0.92em; line-height: 1;
+            color: var(--accent); opacity: 0.85;
+            letter-spacing: 0.04em; flex: none; transform: translateY(1px);
         }
         .section-subtitle {
             font-family: var(--display); font-size: 1.05rem; letter-spacing: 0.1em;
@@ -196,7 +212,7 @@
         /* ════ LIFT INPUT BLOCKS ════ */
         .lift-input-block {
             position: relative;
-            background: var(--bg-2);
+            background: var(--surface);
             border: 1px solid var(--border);
             border-left: var(--rail) solid var(--border-bright);
             border-radius: var(--r);
@@ -204,7 +220,8 @@
             transition: border-color .18s;
         }
         .lift-input-block:focus-within { border-left-color: var(--accent); }
-        body.light-theme .lift-input-block { background: var(--surface-2); }
+        .lift-input-block input, .lift-input-block select { background: var(--bg-2); }
+        input[id$="-weight"] { font-size: 1.12rem; font-weight: 600; }
         .lift-name {
             font-family: var(--display); font-size: 1.25rem; letter-spacing: 0.06em;
             color: var(--accent); margin-bottom: 13px; line-height: 1.1;
@@ -253,7 +270,8 @@
         .program-desc { margin-top: 14px; font-size: 0.84rem; line-height: 1.55; color: var(--text-dim); border-left: 2px solid var(--accent); padding: 2px 0 2px 12px; }
         .program-desc:empty { display: none; }
         #programState { margin-top: 18px; }
-        .ps-stack { display: flex; flex-direction: column; gap: 10px; }
+        .ps-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ps-view { grid-column: 1 / -1; }
         .ps-btn { min-height: var(--tap); border-radius: var(--r); font-family: var(--mono); font-size: 0.92rem; cursor: pointer; padding: 0 16px; border: 1px solid var(--border-bright); transition: border-color .15s, color .15s, filter .15s; }
         .ps-view { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
         .ps-view:hover { filter: brightness(1.08); }
@@ -280,8 +298,23 @@
         .generate-btn {
             width: 100%; padding: 16px; font-size: 1.45rem;
             background: var(--accent); color: var(--bg);
-            box-shadow: 0 0 0 1px var(--accent), 0 6px 22px var(--accent-glow);
+            border-radius: 0;
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+            filter: drop-shadow(0 6px 18px var(--accent-glow));
             position: relative;
+        }
+        .ps-view { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); border-radius: 0; }
+        /* fixed accent status line along the top of the viewport */
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 28%, transparent 82%);
+            pointer-events: none;
+        }
+        @media print { body::before { display: none; } }
+        /* clip-path swallows outlines, so clipped CTAs get an inset focus ring instead */
+        .generate-btn:focus-visible, .ps-view:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 3px var(--bg);
         }
         .generate-btn::after { content: '▸'; margin-left: 10px; font-family: var(--mono); }
         .generate-btn:hover { filter: brightness(1.1); box-shadow: 0 0 0 1px var(--accent), 0 10px 30px var(--accent-glow); }
@@ -474,20 +507,38 @@
         .info-box strong { color: var(--accent); }
 
         /* ════ COLLAPSIBLES ════ */
-        .collapsible-section { margin-top: 16px; }
+        /* editorial collapsibles — rule-separated, no boxes (matches the form) */
+        .collapsible-section { border-top: 1px solid var(--border); }
+        .collapsible-section:last-of-type { border-bottom: 1px solid var(--border); }
         .collapsible-header {
-            background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
-            padding: 14px 16px; font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.06em;
+            background: transparent; border: none; border-radius: 0;
+            padding: 15px 2px; font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.06em;
             color: var(--text-dim); cursor: pointer; display: flex; justify-content: space-between;
-            align-items: center; gap: 8px; min-height: var(--tap); transition: background .18s, color .18s;
+            align-items: center; gap: 8px; min-height: var(--tap); transition: color .18s;
         }
-        .collapsible-header:hover { background: var(--surface-hover); color: var(--accent); }
+        .collapsible-header:hover { color: var(--accent); }
         .collapsible-content {
-            background: var(--surface); border: 1px solid var(--border); border-top: none;
-            border-radius: 0 0 var(--r) var(--r); padding: 0; max-height: 0; overflow: hidden;
+            background: transparent; border: none; border-radius: 0;
+            padding: 0 2px; max-height: 0; overflow: hidden;
             transition: max-height .42s ease, padding .42s ease;
         }
-        .collapsible-content.open { max-height: 6000px; padding: 18px; }
+        .collapsible-content.open { max-height: 6000px; padding: 2px 2px 22px; }
+
+        /* week progress pill (fed by set check-offs) */
+        .week-progress {
+            font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.06em; font-weight: 400;
+            color: var(--text-muted); border: 1px solid var(--border-bright);
+            padding: 3px 9px; border-radius: 999px; flex: none;
+        }
+        .week-progress.complete { color: var(--week1); border-color: var(--week1); }
+        .week-progress:empty { display: none; }
+
+        /* RPE reference table */
+        .rpe-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 4px; }
+        table.rpe-ref { border-collapse: collapse; font-family: var(--mono); font-size: 0.68rem; min-width: 620px; }
+        .rpe-ref th, .rpe-ref td { border: 1px solid var(--border); padding: 5px 8px; text-align: right; color: var(--text-dim); white-space: nowrap; }
+        .rpe-ref thead th { color: var(--accent); font-weight: 600; }
+        .rpe-ref tbody th, .rpe-ref thead th:first-child { color: var(--text); position: sticky; left: 0; background: var(--bg); text-align: left; }
         .collapsible-content h4 { font-family: var(--display); font-size: 1.05rem; color: var(--accent); margin: 16px 0 9px; letter-spacing: 0.04em; }
         .collapsible-content h4:first-child { margin-top: 0; }
         .collapsible-content p, .collapsible-content ol, .collapsible-content ul { font-size: 0.83rem; color: var(--text-dim); line-height: 1.7; }
@@ -625,9 +676,56 @@
             position: fixed; left: 50%; bottom: calc(80px + var(--safe-b)); transform: translateX(-50%) translateY(20px);
             background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
             padding: 11px 18px; border-radius: 999px; font-family: var(--mono); font-size: 0.8rem; z-index: 95;
-            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+            white-space: normal; text-align: center; max-width: min(440px, calc(100vw - 28px)); line-height: 1.45;
         }
         .toast.show { opacity: 1; transform: translateX(-50%); }
+
+        /* ════ HELP ZONE (docs grouped below the tool) ════ */
+        .help-zone { margin-top: 40px; }
+        .zone-title {
+            font-family: var(--display); font-size: 1.1rem; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--text-muted); display: flex; align-items: center; gap: 14px; margin-bottom: 4px;
+        }
+        .zone-title::before, .zone-title::after { content: ''; height: 1px; background: var(--border); flex: 1; }
+
+        /* ════ SET CHECK-OFF (tap a row to mark it done) ════ */
+        .program-output .exercise-row { cursor: pointer; transition: opacity .15s; }
+        .program-output .exercise-row.done { background: linear-gradient(90deg, rgba(0,230,118,0.06), transparent 70%); }
+        .program-output .exercise-row.done .exercise-name {
+            text-decoration: line-through; text-decoration-color: var(--week1); text-decoration-thickness: 2px; opacity: 0.42;
+        }
+        .program-output .exercise-row.done .exercise-prescription { opacity: 0.42; }
+        /* inline-block stops the parent's line-through propagating into the small labels */
+        .exercise-label, .superset-label { display: inline-block; }
+        .output-hint { font-size: 0.64rem; color: var(--text-muted); letter-spacing: 0.04em; margin: -8px 0 14px; padding-left: 2px; }
+
+        /* ════ FAILED TOP SETS (tap "failed set?" → reps achieved → recalc) ════ */
+        .fail-btn {
+            justify-self: start; background: none; border: none; padding: 3px 0 1px; margin-top: 1px;
+            font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase;
+            color: var(--text-muted); border-bottom: 1px dotted var(--text-muted); cursor: pointer;
+            transition: color .15s, border-color .15s; line-height: 1.3;
+        }
+        .fail-btn:hover { color: var(--danger); border-color: var(--danger); }
+        .fail-btn.stamped {
+            color: var(--amber); border-bottom: none; pointer-events: none;
+            text-transform: none; letter-spacing: 0.03em; white-space: normal; text-align: left;
+        }
+        .program-output .exercise-row.failed { background: linear-gradient(90deg, rgba(255,183,77,0.06), transparent 70%); }
+
+        /* ════ VALIDATION FLASH (missing inputs) ════ */
+        .lift-input-block.field-err { border-color: var(--danger); border-left-color: var(--danger); animation: errpulse 1s ease 2; }
+        .lift-input-block.field-err .lift-name { color: var(--danger); }
+        @keyframes errpulse { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 0 3px rgba(255,92,92,0.22); } }
+
+        /* ════ ACCESSIBILITY FLOOR ════ */
+        button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+            outline: 2px solid var(--accent); outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+        }
 
         /* gym-mode (screen wake) indicator pill on cmd btn */
         .cmd-btn.wake-on .ic { color: var(--accent); }
@@ -682,232 +780,23 @@
     </style>
 </head>
 <body>
+    <!-- Visible only when JavaScript fails to execute (e.g. the iOS file
+         preview sheet). The inline script below hides it instantly when JS
+         is alive, so real browsers never see it. -->
+    <div id="nojsWarn" style="background:#7a1220;color:#fff;font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.7;padding:14px 16px;text-align:center;">
+        JavaScript isn't running in this view, so the app can't work here.<br>
+        <b>iPhone:</b> tap Share &rarr; <b>Open in Safari</b> &mdash; then Share &rarr; <b>Add to Home Screen</b> to use it as an app.
+    </div>
+    <script>document.getElementById('nojsWarn').style.display='none';</script>
     <button class="theme-toggle" onclick="toggleTheme(this)" title="Switch theme">☀ Light</button>
     <div class="container" id="appContainer">
 
         <header>
-            <h1>RPE <span class="hot">Program</span> Generator</h1>
-            <p class="header-tag" style="margin-top:10px;">Direct all questions to <a href="https://instagram.com/kyleschmidt__" target="_blank">kyleschmidt__ @ instagram</a></p>
-            <p style="margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.08em;color:var(--text-muted);">v1.94</p>
+            <div class="mast-meta"><span class="tick">///</span><span>Strength Programming</span></div>
+            <h1>Program<span class="ghost">Generator</span></h1>
+            <p class="header-tag"><span>Direct all questions to <a href="https://instagram.com/kyleschmidt__" target="_blank">kyleschmidt__ @ instagram</a></span><span class="ver">v1.95</span></p>
         </header>
 
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                Instructions on how to create your own calculator
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <p>This calculator is a single HTML file — you can host it yourself for free using GitHub Pages so it lives at your own URL and works like an app on your phone.</p>
-                <h4>Step 1 — Copy the code</h4>
-                <button class="copy-code-btn" onclick="copyCodeToClipboard(this)">📋 Copy Code to Clipboard</button>
-                <h4>Step 2 — Create a GitHub Pages site</h4>
-                <p>Follow the instructions at the link below. When it asks you to add a file, create a file called <strong>index.html</strong> and paste the copied code into it.</p>
-                <p style="margin-top:10px;"><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site" target="_blank">https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site</a></p>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                Instructions on how to use the calculator
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <h4>What is RPE?</h4>
-                <p>RPE stands for Rate of Perceived Exertion — a scale from 1 to 10 that measures how hard a set was. RPE 10 means absolute max effort (couldn't do another rep). RPE 7 means you had about 3 reps left in the tank. This calculator uses RPE to estimate your 1 rep max (e1RM) and then calculate working weights for each week.</p>
-
-                <h4>Entering your lifts</h4>
-                <ol>
-                    <li>Select your program from the dropdown</li>
-                    <li>Enter the weight, reps and RPE from a recent working set for each lift — it doesn't have to be a max, just an honest effort</li>
-                    <li>The calculator will estimate your 1RM and display it under each lift</li>
-                    <li>Fill in any optional lifts if you have numbers — these unlock precise accessory weights. If left blank, the calculator falls back to a percentage of your main lift e1RM:
-                        <ul style="margin-top:6px;margin-left:1.2em;line-height:1.9;">
-                            <li><strong>RDL</strong> → Deadlift × 80%</li>
-                            <li><strong>Larsen Press</strong> → Bench × 90%</li>
-                            <li><strong>Front Squat / High Bar</strong> → Squat × 85%</li>
-                            <li><strong>Pause Deadlift</strong> → Deadlift × 80%</li>
-                            <li><strong>Pause Squat</strong> → Squat × 80%</li>
-                            <li><strong>Bent Over Row</strong> → no fallback, weight omitted if blank</li>
-                        </ul>
-                    </li>
-                    <li>For the <strong>Advanced RPE</strong> program, you can optionally enter your <strong>Pause Deadlift</strong> and <strong>Pause Squat</strong> numbers — these unlock precise weights for those movements. Without them, the calculator uses −20% of your main lift e1RM as a fallback</li>
-                </ol>
-
-                <h4>Program options</h4>
-                <p><strong>Training Days</strong> — 4-day splits include a variation/leg day. 3-day combines or drops that day.</p>
-                <p><strong>Target Rep Range</strong> — sets the rep target for your main compound top sets across the program. The Advanced RPE program uses this to drive all variation and accessory rep counts automatically.</p>
-                <p><strong>Progression Goal</strong> — Week 4 either goes AMRAP (as many reps as possible at the calculated weight) or adds +2.5kg to the top set.</p>
-
-                <h4>Lift substitutions</h4>
-                <p>The <strong>Lift Substitutions</strong> panel sits below the main lifts section and shows only exercises relevant to your selected program and day count. Pick an alternative from the dropdown before generating — the output (and the secondary lift input labels) will update to match. Some replacements like Hamstring Curls and Single Leg RDL will omit calculated weight from the output since they don't track the same way. The full list of alternatives is in the FAQ.</p>
-
-                <h4>Reading the output</h4>
-                <p>Each week is collapsible — tap the week header to expand it. Exercises are colour coded:</p>
-                <ol>
-                    <li><strong style="color:var(--cyan)">Blue</strong> — main compound top sets</li>
-                    <li><strong style="color:var(--cyan);opacity:0.6;">Faded blue</strong> — back-off sets (same lift, lower weight)</li>
-                    <li><strong style="color:var(--accent);">Green / Accent</strong> — secondary compounds (calculated)</li>
-                    <li><strong style="color:var(--text-muted);">Muted</strong> — accessories and supersets (fixed volume, adjust weight to feel)</li>
-                </ol>
-
-                <h4>Week structure</h4>
-                <p>Most programs run 4 working weeks with RPE climbing 7 → 8 → 8.5 → 9, followed by a deload week at RPE 6. The deload is not optional — it's where adaptation happens.</p>
-
-                <h4>Saving your data</h4>
-                <p>Your inputs — lifts, program options and the calorie tool — save automatically in your browser on the device you're using, so they're still there when you come back. This is local only: it can be cleared if you wipe your browser data, use private/incognito mode, or delete the home-screen app (on iPhone the browser can also clear it on its own after a stretch of not visiting). For anything you want to keep, use <strong>Back up to file</strong> in the Your Data panel to download a small <strong>.json</strong> file, and <strong>Restore from file</strong> to load it back — including onto a new phone. There's no account and nothing is sent anywhere; the backup file is the durable copy.</p>
-
-                <h4>Printing / saving</h4>
-                <p>Once a program is generated, use the <strong>Print / Save as PDF</strong> button to get a clean printable version. On mobile you can save this as a PDF to your files.</p>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                Instructions on how to use the calorie calculator
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <h4>What it does</h4>
-                <p>The Calorie &amp; Meal Calculator is a separate tool from the program generator — open it from its own dropdown further down the page. It estimates how many calories you need per day and splits that across your meals.</p>
-
-                <h4>The numbers</h4>
-                <p>Enter your sex, age, height (cm) and weight (kg). It works out your <strong>BMR</strong> — the calories your body burns at rest — using the Mifflin-St Jeor equation, which is the most accurate of the common formulas unless you know your body-fat percentage. Your <strong>activity level</strong> multiplies that up to <strong>maintenance (TDEE)</strong>, the calories needed to hold your current weight.</p>
-
-                <h4>Setting a goal</h4>
-                <p>Your <strong>goal</strong> shifts the target above or below maintenance. The adjustments assume roughly 7700 kcal per kilogram of body mass, so losing half a kilo a week is about 550 kcal/day below maintenance, and a full kilo is about 1100. If a target falls below the commonly cited floor — 1200 kcal for women, 1500 for men — it shows a warning. Those floors are general public-health guidance, not personalised advice.</p>
-
-                <h4>Per-meal allowance</h4>
-                <p>Set <strong>Meals / day</strong> to however many times you eat. The daily target is divided across them <strong>evenly by default</strong>. To make a meal bigger or smaller, change its <strong>weight</strong> number — meals are shared out in proportion to those weights. Leaving every meal at 1 keeps them equal; setting one to 2 while the rest stay at 1 gives that meal double the share of each other. The percentages and calories recalculate as you type.</p>
-
-                <h4>How accurate is it?</h4>
-                <p>These are estimates. Actual needs vary with genetics, training, sleep and daily movement, so treat the number as a starting point and adjust it based on how your weight actually moves over a couple of weeks rather than trusting it to the calorie.</p>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                How to add as an app for iOS
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <ol>
-                    <li>Open the website in Safari</li>
-                    <li>Tap the Share button (square with an arrow) at the bottom of the screen</li>
-                    <li>Scroll down and tap "Add to Home Screen"</li>
-                    <li>Choose a name for the shortcut (or keep the default)</li>
-                    <li>Tap "Add" in the top-right corner</li>
-                    <li>The website shortcut will appear on your home screen</li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                How to add as an app for Android
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <h4>On Android (Chrome):</h4>
-                <ol>
-                    <li>Open the website in Chrome</li>
-                    <li>Tap the three-dot menu (⋮) in the top-right corner</li>
-                    <li>Tap "Add to Home screen" or "Install app"</li>
-                    <li>Choose a name for the shortcut (or keep the default)</li>
-                    <li>Tap "Add" or "Install"</li>
-                    <li>The website shortcut will appear on your home screen</li>
-                </ol>
-                <h4>On Android (Firefox):</h4>
-                <ol>
-                    <li>Open the website in Firefox</li>
-                    <li>Tap the three-dot menu (⋮) in the top-right corner</li>
-                    <li>Tap "Add to home screen"</li>
-                    <li>Choose a name for the shortcut</li>
-                    <li>Tap "Add"</li>
-                    <li>The shortcut will appear on your home screen</li>
-                </ol>
-                <h4>On Android (Samsung Internet):</h4>
-                <ol>
-                    <li>Open the website in Samsung Internet</li>
-                    <li>Tap the three-dot menu (⋮)</li>
-                    <li>Tap "Add page to" → "Home screen"</li>
-                    <li>Choose a name and tap "Add"</li>
-                    <li>The shortcut will appear on your home screen</li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                What to run next after Week 5
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <h4>You've finished the 5-week block — what now?</h4>
-                <p>Completing Week 5 (the deload) means you've run the full training cycle at your chosen rep range. At this point you have two paths forward, and the right choice depends on how Week 4 felt and what your goals are.</p>
-
-                <h4>Option 1 — Drop the rep range and go heavier (Strength Progression)</h4>
-                <p>If Week 4 at your current rep range felt strong and manageable, it's time to progress. Select a new rep range that is <strong>2 reps lower</strong> than your previous one (e.g. move from 8 reps → 6 reps, or 6 reps → 4 reps), recalculate your program with your current numbers, and run the full 5-week block again. This is how you cycle from a hypertrophy-focused block toward peak strength — each rep range down builds more intensity and specificity for competition or maximal lifts.</p>
-                <ol>
-                    <li>Log your best recent set (ideally from Week 3 or 4)</li>
-                    <li>Open the calculator, select the same program, reduce the rep range by 2</li>
-                    <li>Enter your updated numbers and regenerate</li>
-                </ol>
-
-                <h4>Option 2 — Return to 8 reps and run a new hypertrophy block</h4>
-                <p>If you've already stepped down through the rep ranges (or if you hit a plateau), reset back to <strong>8 reps</strong> and re-run the hypertrophy block. By the time you return to 8 reps, your 1RM will have increased from the previous cycles, so the weights will be heavier than your last hypertrophy block — this is progressive overload working as intended. Use your most recent working set to recalculate.</p>
-
-                <h4>General rule</h4>
-                <p>The progression ladder looks like this: <strong>8 reps → 6 reps → 4 reps → (optional) 2–3 reps → back to 8 reps</strong>. Each time you complete the ladder and return to 8, your baseline strength should be meaningfully higher. Don't rush to peel the rep range — it's more important that each week of each block feels like genuine work at the prescribed RPE than it is to hurry into the next phase.</p>
-            </div>
-        </div>
-
-        <div class="collapsible-section">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                Frequently Asked Questions
-                <span class="toggle-arrow">▼</span>
-            </div>
-            <div class="collapsible-content">
-                <h4>Q: What do I do if I don't want to perform a certain exercise (e.g. Front Squats)?</h4>
-                <p>Use the <strong>Lift Substitutions</strong> panel below the main lifts section — it shows dropdowns for each substitutable exercise in your selected program. Pick your alternative before generating and it'll be swapped in automatically. The full list of alternatives (best → worst case):</p>
-                <ol>
-                    <li><strong>Front Squat</strong> → Safety Bar Squat → High Bar Squat (worst case)</li>
-                    <li><strong>RDL</strong> → Stiff Legged Deadlift → Pause Deadlifts → Hamstring Curls → Single Leg RDL (worst case — no calculated weight)</li>
-                    <li><strong>Larsen Press</strong> → Pause Bench Press → Close Grip Bench Press</li>
-                    <li><strong>Pendlay Row</strong> → Bent Over Row → DB Row → Machine Row (worst case)</li>
-                    <li><strong>Pull Ups</strong> → Lat Pulldowns → Chin Ups → Assisted Pull Ups (worst case)</li>
-                    <li><strong>Barbell Curl</strong> → Incline DB Curl → Standing Alternating DB Curl → Concentration Curl (worst case)</li>
-                    <li><strong>Skullcrushers (BB)</strong> → Skullcrushers (DB) → Rope Pressdown → Single Arm Rope Pressdown → Dips (worst case — too labour intensive)</li>
-                    <li><strong>Shoulder Shrugs (BB)</strong> → Shoulder Shrugs (DB) → Upright Row (worst case)</li>
-                    <li><strong>Cable Fly</strong> → DB Fly → Pec Deck → Push Ups (worst case)</li>
-                </ol>
-
-                <h4>Q: I am sick, what should I do?</h4>
-                <p>If it's the flu, stay home. If it's a cold, it's up to you if you want to be an asshole and spread it but you're fine to train.</p>
-
-                <h4>Q: I am injured — it's not major but I need to skip some exercises?</h4>
-                <p>So do it. Progress where you can and save yourself trying to catch up everything later. Work around injuries but don't stop entirely. If your shoulder is busted, think of ways to keep yourself moving without pain. As long as you can train other areas with minor pain you can push through. But see a physio obviously if it's lingering longer than two weeks.</p>
-                <p>If you're inflamed, try green lipid mussel extract. I use meloxicam — a prescription anti-inflammatory drug — sparingly when given by a doctor every few months. Joint pain will happen but is minimised with RPE adjustments.</p>
-
-                <h4>Q: I can't make the session — I'm too busy, blah blah</h4>
-                <p>So make it up the next day. If it's too delayed, make it up the next week by repeating the session you would have done last week. You can still hit an AMRAP in Week 4 and may surprise yourself by a new rep range in that calculation.</p>
-
-                <h4>Q: I am wrecked this week, how can I still progress?</h4>
-                <p>Drop the assistance work and focus on hitting your top compound lifts for the week. If you drive them forward everything else will fall into place.</p>
-
-                <h4>Q: I am a total noob — I don't know what weights to use or where to start?</h4>
-                <p>Start with whatever weight you can comfortably perform for 12 reps. Everything else will fall into place — move up once you are consistently hitting that weight and can progress.</p>
-                <p>This also applies for major compounds. If you want to really ensure you're okay though, I suggest hitting up a friend that lifts to take you through major compound lifts like deadlifts. If you actually know me IRL I will help you of course — just send me a message on Instagram saying you wanna hit the gym, can you shit on my form. Ez.</p>
-
-                <h4>Q: Should I film my sets?</h4>
-                <p>If you can, you absolutely should.</p>
-
-                <h4>Q: What supplements should I use?</h4>
-                <p>Creatine. Everything else is contextual to your diet and micro-nutrient gaps. Everything else is a waste of time.</p>
-
-                <h4>Q: What weights to use for assistance versions of main lifts (e.g. Larsen Press)?</h4>
-                <p>The percentages are explained in the instructions above, bozo.</p>
-            </div>
-        </div>
 
         <div id="programForm">
         <!-- ── Program Focus ── -->
@@ -984,7 +873,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="dead-weight" placeholder="140" step="2.5" oninput="updateE1RM('dead')">
+                        <input type="number" inputmode="decimal" id="dead-weight" placeholder="140" step="2.5" oninput="updateE1RM('dead')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1014,7 +903,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="squat-weight" placeholder="120" step="2.5" oninput="updateE1RM('squat')">
+                        <input type="number" inputmode="decimal" id="squat-weight" placeholder="120" step="2.5" oninput="updateE1RM('squat')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1044,7 +933,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="bench-weight" placeholder="80" step="2.5" oninput="updateE1RM('bench')">
+                        <input type="number" inputmode="decimal" id="bench-weight" placeholder="80" step="2.5" oninput="updateE1RM('bench')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1074,7 +963,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="ohp-weight" placeholder="50" step="2.5" oninput="updateE1RM('ohp')">
+                        <input type="number" inputmode="decimal" id="ohp-weight" placeholder="50" step="2.5" oninput="updateE1RM('ohp')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1099,7 +988,7 @@
 
             <!-- ── Lift Substitutions (optional) ── -->
             <div class="sub-panel" id="subPanel" style="margin-top:20px;">
-                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
                     Lift Substitutions <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-muted);font-weight:400;">(optional — only shows exercises relevant to your program)</span>
                     <span class="toggle-arrow">▼</span>
                 </div>
@@ -1110,7 +999,7 @@
             </div>
 
             <div class="collapsible-section" style="margin-top:20px;">
-                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
                     Secondary Lift Input (Optional) <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-muted);font-weight:400;">weights are either calculated or left blank if these fields are unoccupied</span>
                     <span class="toggle-arrow">▼</span>
                 </div>
@@ -1122,7 +1011,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="row-weight" placeholder="—" step="2.5" oninput="updateE1RM('row')">
+                        <input type="number" inputmode="decimal" id="row-weight" placeholder="—" step="2.5" oninput="updateE1RM('row')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1151,7 +1040,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="frontsquat-weight" placeholder="—" step="2.5" oninput="updateE1RM('frontsquat')">
+                        <input type="number" inputmode="decimal" id="frontsquat-weight" placeholder="—" step="2.5" oninput="updateE1RM('frontsquat')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1181,7 +1070,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="rdl-weight" placeholder="—" step="2.5" oninput="updateE1RM('rdl')">
+                        <input type="number" inputmode="decimal" id="rdl-weight" placeholder="—" step="2.5" oninput="updateE1RM('rdl')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1210,7 +1099,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="larsen-weight" placeholder="—" step="2.5" oninput="updateE1RM('larsen')">
+                        <input type="number" inputmode="decimal" id="larsen-weight" placeholder="—" step="2.5" oninput="updateE1RM('larsen')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1240,7 +1129,7 @@
                 <div class="lift-inputs" style="grid-template-columns:1fr;">
                     <div class="input-group">
                         <label>Weight across hips (kg) — barbell, plate, or machine</label>
-                        <input type="number" id="glutebridge-weight" placeholder="e.g. 60" step="2.5">
+                        <input type="number" inputmode="decimal" id="glutebridge-weight" placeholder="e.g. 60" step="2.5">
                     </div>
                 </div>
             </div>
@@ -1251,7 +1140,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="pausedead-weight" placeholder="—" step="2.5" oninput="updateE1RM('pausedead')">
+                        <input type="number" inputmode="decimal" id="pausedead-weight" placeholder="—" step="2.5" oninput="updateE1RM('pausedead')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1281,7 +1170,7 @@
                 <div class="lift-inputs">
                     <div class="input-group">
                         <label>Weight (kg)</label>
-                        <input type="number" id="pausesquat-weight" placeholder="—" step="2.5" oninput="updateE1RM('pausesquat')">
+                        <input type="number" inputmode="decimal" id="pausesquat-weight" placeholder="—" step="2.5" oninput="updateE1RM('pausesquat')">
                     </div>
                     <div class="input-group">
                         <label>Reps</label>
@@ -1330,6 +1219,239 @@
 
         <div class="program-output" id="programOutput"></div>
 
+        <!-- ── Help & Guides (moved below the tool so the app is first) ── -->
+        <div class="help-zone" id="helpZone">
+            <h2 class="zone-title">Help &amp; Guides</h2>
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                Instructions on how to create your own calculator
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <p>This calculator is a single HTML file — you can host it yourself for free using GitHub Pages so it lives at your own URL and works like an app on your phone.</p>
+                <h4>Step 1 — Copy the code</h4>
+                <button class="copy-code-btn" onclick="copyCodeToClipboard(this)">📋 Copy Code to Clipboard</button>
+                <h4>Step 2 — Create a GitHub Pages site</h4>
+                <p>Follow the instructions at the link below. When it asks you to add a file, create a file called <strong>index.html</strong> and paste the copied code into it.</p>
+                <p style="margin-top:10px;"><a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site" target="_blank">https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site</a></p>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                Instructions on how to use the calculator
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <h4>What is RPE?</h4>
+                <p>RPE stands for Rate of Perceived Exertion — a scale from 1 to 10 that measures how hard a set was. RPE 10 means absolute max effort (couldn't do another rep). RPE 7 means you had about 3 reps left in the tank. This calculator uses RPE to estimate your 1 rep max (e1RM) and then calculate working weights for each week.</p>
+
+                <h4>Entering your lifts</h4>
+                <ol>
+                    <li>Select your program from the dropdown</li>
+                    <li>Enter the weight, reps and RPE from a recent working set for each lift — it doesn't have to be a max, just an honest effort</li>
+                    <li>The calculator will estimate your 1RM and display it under each lift</li>
+                    <li>Fill in any optional lifts if you have numbers — these unlock precise accessory weights. If left blank, the calculator falls back to a percentage of your main lift e1RM:
+                        <ul style="margin-top:6px;margin-left:1.2em;line-height:1.9;">
+                            <li><strong>RDL</strong> → Deadlift × 80%</li>
+                            <li><strong>Larsen Press</strong> → Bench × 90%</li>
+                            <li><strong>Front Squat / High Bar</strong> → Squat × 85%</li>
+                            <li><strong>Pause Deadlift</strong> → Deadlift × 80%</li>
+                            <li><strong>Pause Squat</strong> → Squat × 80%</li>
+                            <li><strong>Bent Over Row</strong> → no fallback, weight omitted if blank</li>
+                        </ul>
+                    </li>
+                    <li>For the <strong>Advanced RPE</strong> program, you can optionally enter your <strong>Pause Deadlift</strong> and <strong>Pause Squat</strong> numbers — these unlock precise weights for those movements. Without them, the calculator uses −20% of your main lift e1RM as a fallback</li>
+                </ol>
+
+                <h4>Program options</h4>
+                <p><strong>Training Days</strong> — 4-day splits include a variation/leg day. 3-day combines or drops that day.</p>
+                <p><strong>Target Rep Range</strong> — sets the rep target for your main compound top sets across the program. The Advanced RPE program uses this to drive all variation and accessory rep counts automatically.</p>
+                <p><strong>Progression Goal</strong> — Week 4 either goes AMRAP (as many reps as possible at the calculated weight) or adds +2.5kg to the top set.</p>
+
+                <h4>Lift substitutions</h4>
+                <p>The <strong>Lift Substitutions</strong> panel sits below the main lifts section and shows only exercises relevant to your selected program and day count. Pick an alternative from the dropdown before generating — the output (and the secondary lift input labels) will update to match. Some replacements like Hamstring Curls and Single Leg RDL will omit calculated weight from the output since they don't track the same way. The full list of alternatives is in the FAQ.</p>
+
+                <h4>Reading the output</h4>
+                <p>Each week is collapsible — tap the week header to expand it. Tap any exercise row to check the set off (it stays checked if you close the page), and tap a <strong>weight</strong> to see the plate loading per side. If you miss a top set, tap <strong>failed set?</strong> under it and enter the reps you got — the attempt is treated as a max effort (RPE 10), your e1RM for that lift is re-estimated, and every weight built from it is recalculated. Checked-off sets and the failure record are kept. Exercises are colour coded:</p>
+                <ol>
+                    <li><strong style="color:var(--cyan)">Blue</strong> — main compound top sets</li>
+                    <li><strong style="color:var(--cyan);opacity:0.6;">Faded blue</strong> — back-off sets (same lift, lower weight)</li>
+                    <li><strong style="color:var(--accent);">Green / Accent</strong> — secondary compounds (calculated)</li>
+                    <li><strong style="color:var(--text-muted);">Muted</strong> — accessories and supersets (fixed volume, adjust weight to feel)</li>
+                </ol>
+
+                <h4>Week structure</h4>
+                <p>Most programs run 4 working weeks with RPE climbing 7 → 8 → 8.5 → 9, followed by a deload week at RPE 6. The deload is not optional — it's where adaptation happens.</p>
+
+                <h4>Saving your data</h4>
+                <p>Your inputs — lifts, program options and the calorie tool — save automatically in your browser on the device you're using, so they're still there when you come back. This is local only: it can be cleared if you wipe your browser data, use private/incognito mode, or delete the home-screen app (on iPhone the browser can also clear it on its own after a stretch of not visiting). For anything you want to keep, use <strong>Back up to file</strong> in the Your Data panel to download a small <strong>.json</strong> file, and <strong>Restore from file</strong> to load it back — including onto a new phone. There's no account and nothing is sent anywhere; the backup file is the durable copy.</p>
+
+                <h4>Printing / saving</h4>
+                <p>Once a program is generated, use the <strong>Print / Save as PDF</strong> button to get a clean printable version. On mobile you can save this as a PDF to your files.</p>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                Instructions on how to use the calorie calculator
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <h4>What it does</h4>
+                <p>The Calorie &amp; Meal Calculator is a separate tool from the program generator — open it from its own dropdown further down the page. It estimates how many calories you need per day and splits that across your meals.</p>
+
+                <h4>The numbers</h4>
+                <p>Enter your sex, age, height (cm) and weight (kg). It works out your <strong>BMR</strong> — the calories your body burns at rest — using the Mifflin-St Jeor equation, which is the most accurate of the common formulas unless you know your body-fat percentage. Your <strong>activity level</strong> multiplies that up to <strong>maintenance (TDEE)</strong>, the calories needed to hold your current weight.</p>
+
+                <h4>Setting a goal</h4>
+                <p>Your <strong>goal</strong> shifts the target above or below maintenance. The adjustments assume roughly 7700 kcal per kilogram of body mass, so losing half a kilo a week is about 550 kcal/day below maintenance, and a full kilo is about 1100. If a target falls below the commonly cited floor — 1200 kcal for women, 1500 for men — it shows a warning. Those floors are general public-health guidance, not personalised advice.</p>
+
+                <h4>Per-meal allowance</h4>
+                <p>Set <strong>Meals / day</strong> to however many times you eat. The daily target is divided across them <strong>evenly by default</strong>. To make a meal bigger or smaller, change its <strong>weight</strong> number — meals are shared out in proportion to those weights. Leaving every meal at 1 keeps them equal; setting one to 2 while the rest stay at 1 gives that meal double the share of each other. The percentages and calories recalculate as you type.</p>
+
+                <h4>How accurate is it?</h4>
+                <p>These are estimates. Actual needs vary with genetics, training, sleep and daily movement, so treat the number as a starting point and adjust it based on how your weight actually moves over a couple of weeks rather than trusting it to the calorie.</p>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                How to add as an app for iOS
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <ol>
+                    <li>Open the website in Safari</li>
+                    <li>Tap the Share button (square with an arrow) at the bottom of the screen</li>
+                    <li>Scroll down and tap "Add to Home Screen"</li>
+                    <li>Choose a name for the shortcut (or keep the default)</li>
+                    <li>Tap "Add" in the top-right corner</li>
+                    <li>The website shortcut will appear on your home screen</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                How to add as an app for Android
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <h4>On Android (Chrome):</h4>
+                <ol>
+                    <li>Open the website in Chrome</li>
+                    <li>Tap the three-dot menu (⋮) in the top-right corner</li>
+                    <li>Tap "Add to Home screen" or "Install app"</li>
+                    <li>Choose a name for the shortcut (or keep the default)</li>
+                    <li>Tap "Add" or "Install"</li>
+                    <li>The website shortcut will appear on your home screen</li>
+                </ol>
+                <h4>On Android (Firefox):</h4>
+                <ol>
+                    <li>Open the website in Firefox</li>
+                    <li>Tap the three-dot menu (⋮) in the top-right corner</li>
+                    <li>Tap "Add to home screen"</li>
+                    <li>Choose a name for the shortcut</li>
+                    <li>Tap "Add"</li>
+                    <li>The shortcut will appear on your home screen</li>
+                </ol>
+                <h4>On Android (Samsung Internet):</h4>
+                <ol>
+                    <li>Open the website in Samsung Internet</li>
+                    <li>Tap the three-dot menu (⋮)</li>
+                    <li>Tap "Add page to" → "Home screen"</li>
+                    <li>Choose a name and tap "Add"</li>
+                    <li>The shortcut will appear on your home screen</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                What to run next after Week 5
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <h4>You've finished the 5-week block — what now?</h4>
+                <p>Completing Week 5 (the deload) means you've run the full training cycle at your chosen rep range. At this point you have two paths forward, and the right choice depends on how Week 4 felt and what your goals are.</p>
+
+                <h4>Option 1 — Drop the rep range and go heavier (Strength Progression)</h4>
+                <p>If Week 4 at your current rep range felt strong and manageable, it's time to progress. Select a new rep range that is <strong>2 reps lower</strong> than your previous one (e.g. move from 8 reps → 6 reps, or 6 reps → 4 reps), recalculate your program with your current numbers, and run the full 5-week block again. This is how you cycle from a hypertrophy-focused block toward peak strength — each rep range down builds more intensity and specificity for competition or maximal lifts.</p>
+                <ol>
+                    <li>Log your best recent set (ideally from Week 3 or 4)</li>
+                    <li>Open the calculator, select the same program, reduce the rep range by 2</li>
+                    <li>Enter your updated numbers and regenerate</li>
+                </ol>
+
+                <h4>Option 2 — Return to 8 reps and run a new hypertrophy block</h4>
+                <p>If you've already stepped down through the rep ranges (or if you hit a plateau), reset back to <strong>8 reps</strong> and re-run the hypertrophy block. By the time you return to 8 reps, your 1RM will have increased from the previous cycles, so the weights will be heavier than your last hypertrophy block — this is progressive overload working as intended. Use your most recent working set to recalculate.</p>
+
+                <h4>General rule</h4>
+                <p>The progression ladder looks like this: <strong>8 reps → 6 reps → 4 reps → (optional) 2–3 reps → back to 8 reps</strong>. Each time you complete the ladder and return to 8, your baseline strength should be meaningfully higher. Don't rush to peel the rep range — it's more important that each week of each block feels like genuine work at the prescribed RPE than it is to hurry into the next phase.</p>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                RPE Reference Chart
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Columns are reps, values are the percentage of your estimated 1RM that rep count at that RPE corresponds to. This is the exact table the generator uses, so you can sanity-check any prescribed weight or work out a load on the fly.</p>
+                <div class="rpe-table-wrap" id="rpeRefTable"></div>
+            </div>
+        </div>
+
+        <div class="collapsible-section">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
+                Frequently Asked Questions
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <h4>Q: What do I do if I don't want to perform a certain exercise (e.g. Front Squats)?</h4>
+                <p>Use the <strong>Lift Substitutions</strong> panel below the main lifts section — it shows dropdowns for each substitutable exercise in your selected program. Pick your alternative before generating and it'll be swapped in automatically. The full list of alternatives (best → worst case):</p>
+                <ol>
+                    <li><strong>Front Squat</strong> → Safety Bar Squat → High Bar Squat (worst case)</li>
+                    <li><strong>RDL</strong> → Stiff Legged Deadlift → Pause Deadlifts → Hamstring Curls → Single Leg RDL (worst case — no calculated weight)</li>
+                    <li><strong>Larsen Press</strong> → Pause Bench Press → Close Grip Bench Press</li>
+                    <li><strong>Pendlay Row</strong> → Bent Over Row → DB Row → Machine Row (worst case)</li>
+                    <li><strong>Pull Ups</strong> → Lat Pulldowns → Chin Ups → Assisted Pull Ups (worst case)</li>
+                    <li><strong>Barbell Curl</strong> → Incline DB Curl → Standing Alternating DB Curl → Concentration Curl (worst case)</li>
+                    <li><strong>Skullcrushers (BB)</strong> → Skullcrushers (DB) → Rope Pressdown → Single Arm Rope Pressdown → Dips (worst case — too labour intensive)</li>
+                    <li><strong>Shoulder Shrugs (BB)</strong> → Shoulder Shrugs (DB) → Upright Row (worst case)</li>
+                    <li><strong>Cable Fly</strong> → DB Fly → Pec Deck → Push Ups (worst case)</li>
+                </ol>
+
+                <h4>Q: I am sick, what should I do?</h4>
+                <p>If it's the flu, stay home. If it's a cold, it's up to you if you want to be an asshole and spread it but you're fine to train.</p>
+
+                <h4>Q: I am injured — it's not major but I need to skip some exercises?</h4>
+                <p>So do it. Progress where you can and save yourself trying to catch up everything later. Work around injuries but don't stop entirely. If your shoulder is busted, think of ways to keep yourself moving without pain. As long as you can train other areas with minor pain you can push through. But see a physio obviously if it's lingering longer than two weeks.</p>
+                <p>If you're inflamed, try green lipid mussel extract. I use meloxicam — a prescription anti-inflammatory drug — sparingly when given by a doctor every few months. Joint pain will happen but is minimised with RPE adjustments.</p>
+
+                <h4>Q: I can't make the session — I'm too busy, blah blah</h4>
+                <p>So make it up the next day. If it's too delayed, make it up the next week by repeating the session you would have done last week. You can still hit an AMRAP in Week 4 and may surprise yourself by a new rep range in that calculation.</p>
+
+                <h4>Q: I am wrecked this week, how can I still progress?</h4>
+                <p>Drop the assistance work and focus on hitting your top compound lifts for the week. If you drive them forward everything else will fall into place.</p>
+
+                <h4>Q: I am a total noob — I don't know what weights to use or where to start?</h4>
+                <p>Start with whatever weight you can comfortably perform for 12 reps. Everything else will fall into place — move up once you are consistently hitting that weight and can progress.</p>
+                <p>This also applies for major compounds. If you want to really ensure you're okay though, I suggest hitting up a friend that lifts to take you through major compound lifts like deadlifts. If you actually know me IRL I will help you of course — just send me a message on Instagram saying you wanna hit the gym, can you shit on my form. Ez.</p>
+
+                <h4>Q: Should I film my sets?</h4>
+                <p>If you can, you absolutely should.</p>
+
+                <h4>Q: What supplements should I use?</h4>
+                <p>Creatine. Everything else is contextual to your diet and micro-nutrient gaps. Everything else is a waste of time.</p>
+
+                <h4>Q: What weights to use for assistance versions of main lifts (e.g. Larsen Press)?</h4>
+                <p>The percentages are explained in the instructions above, bozo.</p>
+            </div>
+        </div>
+        </div><!-- /help-zone -->
+
         <!-- ── Calorie & Meal Calculator ── -->
         <style>
           #caloriePanel .cal-output{ margin-top:20px; }
@@ -1358,7 +1480,7 @@
           .data-note{ font-size:0.7rem; color:var(--text-muted); line-height:1.65; }
         </style>
         <div class="collapsible-section" id="caloriePanel" style="margin-top:34px;">
-            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+            <div class="collapsible-header" role="button" tabindex="0" onclick="toggleCollapsible(this)">
                 Calorie &amp; Meal Calculator <span style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--text-muted);font-weight:400;">(Mifflin-St Jeor · kg/cm)</span>
                 <span class="toggle-arrow">▼</span>
             </div>
@@ -1373,15 +1495,15 @@
                 </div>
                 <div class="input-group">
                     <label>Age (years)</label>
-                    <input type="number" id="cal-age" min="15" max="80" step="1" placeholder="30" oninput="recalcCalories()">
+                    <input type="number" inputmode="decimal" id="cal-age" min="15" max="80" step="1" placeholder="30" oninput="recalcCalories()">
                 </div>
                 <div class="input-group">
                     <label>Height (cm)</label>
-                    <input type="number" id="cal-height" min="120" max="230" step="0.5" placeholder="178" oninput="recalcCalories()">
+                    <input type="number" inputmode="decimal" id="cal-height" min="120" max="230" step="0.5" placeholder="178" oninput="recalcCalories()">
                 </div>
                 <div class="input-group">
                     <label>Weight (kg)</label>
-                    <input type="number" id="cal-weight" min="30" max="300" step="0.1" placeholder="80" oninput="recalcCalories()">
+                    <input type="number" inputmode="decimal" id="cal-weight" min="30" max="300" step="0.1" placeholder="80" oninput="recalcCalories()">
                 </div>
             </div>
             <div class="options-row">
@@ -1408,7 +1530,7 @@
                 </div>
                 <div class="input-group">
                     <label>Meals / day</label>
-                    <input type="number" id="cal-meals" min="1" max="12" step="1" value="3" oninput="recalcCalories()">
+                    <input type="number" inputmode="decimal" id="cal-meals" min="1" max="12" step="1" value="3" oninput="recalcCalories()">
                 </div>
             </div>
             <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
@@ -1436,9 +1558,14 @@
         document.addEventListener('DOMContentLoaded', handleFocusChange);
 
         // ── Theme Toggle ───────────────────────────────────────────────────────
+        function syncThemeColor(){
+            const m = document.querySelector('meta[name="theme-color"]');
+            if(m) m.setAttribute('content', document.body.classList.contains('light-theme') ? '#eef1f6' : '#04070a');
+        }
         function toggleTheme(btn) {
             const isLight = document.body.classList.toggle('light-theme');
             btn.textContent = isLight ? '🌙 Dark' : '☀ Light';
+            syncThemeColor();
         }
 
         // ── Clipboard ──────────────────────────────────────────────────────────
@@ -1522,6 +1649,16 @@
         // Each flag, when on, makes that lift prescribe by-feel / bodyweight instead
         // of a calculated weight. Default off. Only shown for mass_builder_plus.
         const dunnoState = { squat: false, rdl: false, glutebridge: false, dead: false, bench: false, ohp: false };
+        // Single source of truth: which lifts show the "Don't know" toggle (and are
+        // gated/calculated) for each program. Used by handleFocusChange + the gate.
+        const DUNNO_LIFTS = {
+            mass_builder_plus:    ['squat','rdl','glutebridge'],
+            beginner_freeweights: ['squat','bench','dead','ohp'],
+            arnold_golden6:       ['squat','bench','ohp'],
+            hhh_basic:            ['bench'],
+            hhh_advanced:         ['bench','ohp'],
+            arnold_volume:        ['squat','bench','ohp']
+        };
         function toggleDunno(lift) {
             dunnoState[lift] = !dunnoState[lift];
             const btn = document.getElementById(lift + '-dunno');
@@ -1922,16 +2059,16 @@
                                     hiddenMain: ['ohpBlock'],
                                     visibleSec: ['rowBlock','rdlBlock','larsenBlock'] },
                 arnold_golden6: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: [],
+                                    hiddenMain: ['deadBlock'],
                                     visibleSec: [] },
                 hhh_basic: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: [],
+                                    hiddenMain: ['deadBlock','squatBlock','ohpBlock'],
                                     visibleSec: [] },
                 hhh_advanced: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: [],
+                                    hiddenMain: ['deadBlock','squatBlock'],
                                     visibleSec: [] },
                 arnold_volume: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: [],
+                                    hiddenMain: ['deadBlock'],
                                     visibleSec: [] },
                 beginner_freeweights: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
                                     hiddenMain: [],
@@ -2033,9 +2170,10 @@
             }
 
             // ── "Don't know" toggle buttons — only for m(ASS) Builder+ ──
+            const __activeDunno = DUNNO_LIFTS[focus] || [];
             ['squat','rdl','glutebridge','dead','bench','ohp'].forEach(l => {
                 const b = document.getElementById(l + '-dunno');
-                if (focus === 'mass_builder_plus' || focus === 'beginner_freeweights' || focus === 'arnold_golden6') {
+                if (__activeDunno.includes(l)) {
                     if (b) b.classList.add('show');
                 } else {
                     if (b) { b.classList.remove('show'); b.classList.remove('active'); b.textContent = "Don't know"; }
@@ -2336,6 +2474,40 @@
         }
 
         // ── Main generate dispatcher ────────────────────────────────────────────
+        // The reference chart in Help & Guides is generated from the same
+        // rpeChart the calculators use, so it can never drift out of sync.
+        function buildRpeReference(){
+            const host = document.getElementById('rpeRefTable');
+            if(!host || typeof rpeChart === 'undefined') return;
+            const rpes = Object.keys(rpeChart).map(Number).sort((a,b)=>b-a);
+            let html = '<table class="rpe-ref"><thead><tr><th>RPE</th>';
+            for(let r = 1; r <= 12; r++) html += '<th>' + r + '</th>';
+            html += '</tr></thead><tbody>';
+            rpes.forEach(rpe=>{
+                html += '<tr><th>' + rpe + '</th>';
+                (rpeChart[rpe] || []).forEach(p=>{ html += '<td>' + p.toFixed(1) + '</td>'; });
+                html += '</tr>';
+            });
+            host.innerHTML = html + '</tbody></table>';
+        }
+
+        const LIFT_LABELS = { dead:'Deadlift', squat:'Squat', bench:'Bench Press', ohp:'Overhead Press', rdl:'RDL', glutebridge:'Glute Bridge' };
+        // Toast + flash + scroll-to instead of alert(): tells the user *which*
+        // field is missing and takes them to it.
+        function flashLifts(keys){
+            let first = null;
+            (keys || []).forEach(k=>{
+                const blk = document.getElementById(k === 'glutebridge' ? 'gluteBridgeBlock' : k + 'Block');
+                if(!blk) return;
+                blk.classList.remove('field-err'); void blk.offsetWidth;   // restart animation
+                blk.classList.add('field-err');
+                setTimeout(()=> blk.classList.remove('field-err'), 2600);
+                if(!first) first = blk;
+            });
+            if(first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+        }
+        function inputFail(msg, keys){ showToast(msg, 4200); flashLifts(keys); return false; }
+
         function generateProgram() {
             const focus = document.getElementById('accessoryFocus').value;
             const isBeginner    = focus === 'beginner_machine';
@@ -2379,21 +2551,14 @@
             else if (isAdvancedRPE)    requiredLifts = ['squat', 'bench', 'dead'];
             else                       requiredLifts = lifts;
 
+            const missingMain = requiredLifts.filter(l => !parseFloat(document.getElementById(`${l}-weight`).value));
+            if (missingMain.length) {
+                return inputFail('Enter weight for: ' + missingMain.map(l => LIFT_LABELS[l]).join(', '), missingMain);
+            }
             for (const lift of lifts) {
                 const weight = parseFloat(document.getElementById(`${lift}-weight`).value);
                 const reps   = parseInt(document.getElementById(`${lift}-reps`).value);
                 const rpe    = parseFloat(document.getElementById(`${lift}-rpe`).value);
-                if (!weight && requiredLifts.includes(lift)) {
-                    alert(isBenchMax
-                        ? 'Please enter Bench, Squat and Deadlift weights for Bench Max program'
-                        : isMassBuilder
-                            ? 'm(ASS) Builder requires your Squat numbers.'
-                            : isShoulderGrowth
-                                ? 'Shoulder Growth requires Deadlift, Squat, Bench and OHP numbers.'
-                                : 'Please enter all four main lift weights');
-                    return;
-                }
-                if (weight && !rpe) { alert('RPE not set for ' + lift); return; }
                 if (weight) e1rms[lift] = calculateE1RM(weight, reps, rpe);
             }
             // m(ASS) Builder: require RDL + Glute Bridge
@@ -2401,11 +2566,11 @@
                 const rdlW   = parseFloat(document.getElementById('rdl-weight').value);
                 const rdlR   = parseInt(document.getElementById('rdl-reps').value);
                 const rdlRPE = parseFloat(document.getElementById('rdl-rpe').value);
-                if (!rdlW) { alert('m(ASS) Builder requires your RDL weight.'); return; }
+                if (!rdlW) return inputFail('m(ASS) Builder needs your RDL numbers.', ['rdl']);
                 e1rms['rdl'] = calculateE1RM(rdlW, rdlR, rdlRPE);
 
                 const gbW = parseFloat(document.getElementById('glutebridge-weight').value);
-                if (!gbW) { alert('m(ASS) Builder requires a Glute Bridge weight.'); return; }
+                if (!gbW) return inputFail('m(ASS) Builder needs a Glute Bridge weight.', ['glutebridge']);
             }
 
             // Optional lifts for non-mAss programs
@@ -2435,6 +2600,15 @@
             if (isArnoldG6) {
                 ['squat','bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
             }
+            if (isHHHBasic) {
+                if (dunnoState.bench) delete e1rms.bench;
+            }
+            if (isHHHAdv) {
+                ['bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
+            }
+            if (isArnoldVol) {
+                ['squat','bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
+            }
 
             // Make the "Don't know" toggle load-bearing: for the programs that show
             // it, a blank lift is only treated as by-feel when the user has explicitly
@@ -2442,11 +2616,7 @@
             // prompt for it rather than silently defaulting (which made the toggle do
             // nothing in its main use case).
             {
-                const __toggleLifts = ({
-                    beginner_freeweights: ['squat','bench','dead','ohp'],
-                    arnold_golden6:       ['squat','bench','ohp'],
-                    mass_builder_plus:    ['squat','rdl','glutebridge']
-                })[focus];
+                const __toggleLifts = DUNNO_LIFTS[focus];
                 if (__toggleLifts) {
                     const __names = { squat:'Squat', bench:'Bench Press', dead:'Deadlift', ohp:'Overhead Press', rdl:'RDL', glutebridge:'Glute Bridge' };
                     const __missing = __toggleLifts.filter(k => {
@@ -2455,8 +2625,7 @@
                         return blank && !dunnoState[k];
                     });
                     if (__missing.length) {
-                        alert('For ' + __missing.map(k => __names[k]).join(', ') + ': enter a weight, or tap \u201cDon\u2019t know\u201d to train it by feel.');
-                        return;
+                        return inputFail('For ' + __missing.map(k => __names[k]).join(', ') + ': enter a weight, or tap \u201cDon\u2019t know\u201d to train it by feel.', __missing);
                     }
                 }
             }
@@ -2535,6 +2704,7 @@
             const output = document.getElementById('programOutput');
             html = applySubstitutions(html);
             output.innerHTML = html;
+            decorateOutput(output);
             output.classList.add('visible');
             document.getElementById('exportBtn').classList.add('visible');
             document.getElementById('textBtn').classList.add('visible');
@@ -2552,6 +2722,7 @@
             if (firstHeader) firstHeader.classList.add('open');
 
             output.scrollIntoView({ behavior: 'smooth' });
+            return true;
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -3632,14 +3803,18 @@
         //  everything else is "add weight when it's easy". Presented with an honest
         //  warning that this is a historical, very-high-volume routine.
         // ════════════════════════════════════════════════════════════════════════
+        // Arnold straight-set primary: one calculated working weight at RPE 8
+        // (these aren't pyramid sets, so no per-set RPE spread). e1rms-based.
         function arnoldVolTopSet(name, liftKey, sets, reps) {
-            const el = document.getElementById(liftKey + '-weight');
-            const base = el ? parseFloat(el.value) : NaN;
-            if (isNaN(base) || dunnoState[liftKey]) {
+            const e1 = (typeof __AV_E1RMS !== 'undefined') ? __AV_E1RMS[liftKey] : undefined;
+            if (!e1 || dunnoState[liftKey]) {
                 return `<div class="exercise-row"><span class="exercise-name main">${name}</span><span class="exercise-prescription">${sets}×${reps}</span></div>`;
             }
-            return `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">work up to a hard top set</span></span><span class="exercise-prescription">${sets}×${reps} @ ~<span class="weight">${roundToPlate(base)}kg</span></span></div>`;
+            const calcReps = 9;            // mid of the 8-10 working range
+            const w = roundToPlate(calculateWeight(e1, calcReps, 8));
+            return `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">RPE 8</span></span><span class="exercise-prescription">${sets}×${reps} @ <span class="weight">${w}kg</span></span></div>`;
         }
+        let __AV_E1RMS = {};
         function avRow(name, presc, cls){ cls = cls || 'accessory'; return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">${presc}</span></div>`; }
         function avDiv(){ return '<div class="section-divider"></div>'; }
 
@@ -3651,7 +3826,7 @@
                 ${avRow('Dumbbell Flyes','3×10-12')}
                 ${avRow('Weighted Dips','3×10','secondary')}
                 ${avDiv()}
-                ${arnoldVolTopSet('Bent-Over Barbell Row','dead',4,'8-10')}
+                ${avRow('Bent-Over Barbell Row','4×8-10','secondary')}
                 ${avRow('Wide-Grip Chin-Up / Pulldown','4×10','secondary')}
                 ${avRow('Close-Grip Cable Row','3×10')}
                 ${avRow('Barbell or T-Bar Pullover','3×12')}
@@ -3689,6 +3864,7 @@
         }
 
         function arnoldVolWeek(e1rms){
+            __AV_E1RMS = e1rms || {};
             // 6-day: Day 1/4 Chest&Back, 2/5 Shoulders&Arms, 3/6 Legs.
             const cb = arnoldVolChestBack(e1rms);
             const sa = arnoldVolShouldersArms(e1rms);
@@ -3711,12 +3887,18 @@
         // ════════════════════════════════════════════════════════════════════════
         function hhhRow(name, reps, cls){ cls = cls || 'accessory'; return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">2-4×${reps}</span></div>`; }
         function hhhDiv(){ return '<div class="section-divider"></div>'; }
+        let __HHH_BENCH_E1RM = undefined;
+        // HHH Basic flat bench: one calculated weight per day. Heavy day (6-10)
+        // pegs RPE 8.5; light day (12-15) pegs RPE 7.5. Capped at 8.5.
         function hhhBenchRow(reps){
-            const el = document.getElementById('bench-weight');
-            const base = el ? parseFloat(el.value) : NaN;
-            if (isNaN(base) || dunnoState.bench)
+            const e1 = __HHH_BENCH_E1RM;
+            if (!e1 || dunnoState.bench)
                 return `<div class="exercise-row"><span class="exercise-name main">Flat Barbell Bench Press</span><span class="exercise-prescription">2-4×${reps}</span></div>`;
-            return `<div class="exercise-row"><span class="exercise-name main">Flat Barbell Bench Press<span class="exercise-label">work up to a hard top set</span></span><span class="exercise-prescription">2-4×${reps} @ ~<span class="weight">${roundToPlate(base)}kg</span></span></div>`;
+            const heavy = (reps === '6-10');
+            const rpe = heavy ? 8.5 : 7.5;
+            const calcReps = heavy ? 8 : 12;
+            const w = roundToPlate(calculateWeight(e1, calcReps, rpe));
+            return `<div class="exercise-row"><span class="exercise-name main">Flat Barbell Bench Press<span class="exercise-label">RPE ${rpe}</span></span><span class="exercise-prescription">2-4×${reps} @ <span class="weight">${w}kg</span></span></div>`;
         }
 
         // Chest/Shoulders/Triceps day. heavy => 6-10, light => 12-15.
@@ -3755,6 +3937,7 @@
         }
 
         function buildHHHBasicProgram(e1rms){
+            __HHH_BENCH_E1RM = (e1rms && e1rms.bench) ? e1rms.bench : undefined;
             // Day1 push heavy, Day2 pull light, Day4 push light, Day5 pull heavy.
             const week =
                 hhhBasicPushDay(1, true) +
@@ -3795,11 +3978,33 @@
             cls = cls || 'accessory';
             return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">${sets}×${scheme}</span></div>`;
         }
+        let __HHH_ADV_E1RMS = {};
+        // HHH Advanced named primary: warm-up + descending pyramid that matches the
+        // rep scheme — 12-15 @ RPE 7, 10-12 @ RPE 8, 6-8 @ RPE 8.5 (cap 8.5).
+        // If no number / Don't know -> by-feel (just the scheme, no weights).
+        function hhhAdvPrimary(name, liftKey){
+            const e1 = __HHH_ADV_E1RMS[liftKey];
+            if (!e1 || dunnoState[liftKey]) {
+                return `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">warm-up + 3 working sets to failure</span></span><span class="exercise-prescription">4×${HHH_PYR}</span></div>`;
+            }
+            const tiers = [
+                { reps: 12, rpe: 7,   lbl: '12-15' },
+                { reps: 11, rpe: 8,   lbl: '10-12' },
+                { reps: 7,  rpe: 8.5, lbl: '6-8'   }
+            ];
+            let rows = `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">Warm-up · form only</span></span><span class="exercise-prescription">1×12-15 — light</span></div>`;
+            tiers.forEach((t, i) => {
+                const w = roundToPlate(calculateWeight(e1, t.reps, t.rpe));
+                const cls = (i === 2) ? 'main' : 'backoff';
+                rows += `<div class="exercise-row"><span class="exercise-name ${cls}">${name}<span class="exercise-label">${t.lbl} · RPE ${t.rpe}</span></span><span class="exercise-prescription">1×${t.lbl} @ <span class="weight">${w}kg</span></span></div>`;
+            });
+            return rows;
+        }
 
         function hhhAdvShouldersTri(){
             return `<div class="day-block">
                 <div class="day-title">Day 1: Shoulders & Triceps</div>
-                ${hhhAdvRow('Front Military Press', 4, HHH_PYR, 'main')}
+                ${hhhAdvPrimary('Front Military Press', 'ohp')}
                 ${hhhAdvRow('Lateral Raise', 4, HHH_PYR, 'secondary')}
                 ${hhhAdvRow('Front Raise', 4, HHH_PYR)}
                 ${hhhAdvRow('Shrug', 4, HHH_PYR)}
@@ -3839,7 +4044,7 @@
         function hhhAdvChestBi(){
             return `<div class="day-block">
                 <div class="day-title">Day 4: Chest & Biceps</div>
-                ${hhhAdvRow('Bench Press', 4, HHH_PYR, 'main')}
+                ${hhhAdvPrimary('Bench Press', 'bench')}
                 ${hhhAdvRow('Incline Press', 4, HHH_PYR, 'secondary')}
                 ${hhhAdvRow('Pec Fly', 4, HHH_PYR)}
                 ${hhhAdvRow('Cable Crossover', 4, HHH_PYR)}
@@ -3852,6 +4057,7 @@
         }
 
         function buildHHHAdvancedProgram(e1rms){
+            __HHH_ADV_E1RMS = e1rms || {};
             const week = hhhAdvShouldersTri() + hhhAdvLegs() + hhhAdvBack() + hhhAdvChestBi();
             let html = `
                 <div class="week-block week-4">
@@ -5697,12 +5903,12 @@
 
         // ---- toast ----
         let __toastTimer = null;
-        function showToast(msg){
+        function showToast(msg, ms){
             const t = document.getElementById('toast');
             if(!t) return;
             t.textContent = msg; t.classList.add('show');
             clearTimeout(__toastTimer);
-            __toastTimer = setTimeout(()=> t.classList.remove('show'), 1900);
+            __toastTimer = setTimeout(()=> t.classList.remove('show'), ms || 1900);
         }
 
         // ---- bottom sheets ----
@@ -5776,12 +5982,223 @@
             banner.innerHTML = '<span>'+(__focusLabels[focus]||'Program')+'</span>'+
                 chips.map(c=>'<span class="chip">'+c+'</span>').join('');
             output.insertBefore(banner, output.firstChild);
+            const hint = document.createElement('div');
+            hint.className = 'output-hint';
+            hint.textContent = 'Tap a set to check it off · tap a weight for plates · “failed set?” recalcs the program from a missed top set';
+            output.insertBefore(hint, banner.nextSibling);
         }
 
-        // ---- tap a weight -> plate breakdown (event-delegated; generators untouched) ----
+        // ---- tap a weight -> plate breakdown; tap a row -> check the set off;
+        //      tap "failed set?" -> reps-achieved dialog -> recalc ----
+        // (event-delegated; the program generators are never touched)
         function onOutputClick(e){
+            const fb = e.target.closest('.fail-btn');
+            if(fb){ e.stopPropagation(); openFailDialog(fb); return; }
             const weight = e.target.closest('.weight');
-            if(weight){ e.stopPropagation(); showPlatePop(weight); }
+            if(weight){ e.stopPropagation(); showPlatePop(weight); return; }
+            const row = e.target.closest('.exercise-row');
+            if(row){
+                row.classList.toggle('done');
+                refreshWeekProgress(document.getElementById('programOutput'));
+                try { saveProgramSnapshot(); } catch(err){}   // check-offs survive reloads
+            }
+        }
+
+        // ════════ FAILED TOP SETS ════════
+        // Failing a prescribed top set means the e1RM behind it was too high.
+        // The attempt (weight × reps achieved) is a max effort — RPE 10 — so it
+        // re-estimates the lift's e1RM directly, and the program regenerates
+        // from the new number. Only offered where top sets are prescribed
+        // straight off a main-lift e1RM; linear/fixed programs are excluded
+        // (their failure protocol is repeat/deload, not recalc), and derived
+        // variations (pause work, deficits, Larsen) don't map back cleanly.
+        const FAIL_RECALC_PROGRAMS = ['powerlifting','bodybuilding','benchmax','rpe_cutting',
+            'mass_builder','mass_builder_plus','peaking_block','bulgarian_lite',
+            'shoulder_growth','arm_growth','leg_growth','advanced_rpe'];
+        function liftKeyFromMainName(raw){
+            const n = (raw || '').toLowerCase();
+            if(/pause|deficit|larsen|front|safety|hip thrust|glute/.test(n)) return null;
+            if(n.includes('bench')) return 'bench';
+            if(n === 'rdl' || n.includes('romanian')) return 'rdl';
+            if(n.includes('deadlift')) return 'dead';
+            if(n.includes('squat')) return 'squat';
+            if(/ohp|overhead|military|push press/.test(n)) return 'ohp';
+            return null;
+        }
+
+        // Make injected output keyboard-usable and attach "failed set?" to
+        // eligible top-set rows. Idempotent, so re-running on restored
+        // snapshots is safe.
+        function decorateOutput(out){
+            if(!out) return;
+            out.querySelectorAll('.week-header').forEach(h=>{
+                h.setAttribute('tabindex','0'); h.setAttribute('role','button');
+            });
+            refreshWeekProgress(out);
+            const focus = document.getElementById('accessoryFocus');
+            if(!focus || !FAIL_RECALC_PROGRAMS.includes(focus.value)) return;
+            out.querySelectorAll('.exercise-row').forEach(row=>{
+                if(row.querySelector('.fail-btn')) return;
+                const nameEl = row.querySelector('.exercise-name.main');
+                const wEl = row.querySelector('.exercise-prescription .weight');
+                if(!nameEl || !wEl) return;
+                const rawName = nameEl.childNodes[0] ? nameEl.childNodes[0].textContent.trim() : nameEl.textContent.trim();
+                const key = liftKeyFromMainName(rawName);
+                if(!key) return;
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'fail-btn'; b.textContent = 'failed set?';
+                b.setAttribute('data-lift', key);
+                row.appendChild(b);   // 3rd row child: invisible to the PDF/text parsers
+            });
+        }
+
+        // ---- live per-week progress pill in each week header, fed by
+        //      check-offs. Rendered after span:first-child, so the PDF/text
+        //      parsers (which read only the first span) never see it. ----
+        function refreshWeekProgress(out){
+            if(!out) return;
+            out.querySelectorAll('.week-block').forEach(wk=>{
+                const total = wk.querySelectorAll('.exercise-row').length;
+                const done  = wk.querySelectorAll('.exercise-row.done').length;
+                const h = wk.querySelector('.week-header');
+                if(!h || !total) return;
+                let pill = h.querySelector('.week-progress');
+                if(!pill){
+                    pill = document.createElement('span');
+                    pill.className = 'week-progress';
+                    if(h.lastElementChild) h.insertBefore(pill, h.lastElementChild);
+                    else h.appendChild(pill);
+                }
+                pill.textContent = done ? (done + '/' + total) : '';
+                pill.classList.toggle('complete', done > 0 && done === total);
+            });
+        }
+
+        // ---- row marks (done / failed / open weeks) survive a regeneration.
+        // Row structure is a pure function of program + options, so [week, row]
+        // indices are stable when only e1RMs change. ----
+        function collectRowMarks(out){
+            const marks = { done: [], failed: [], open: [] };
+            if(!out) return marks;
+            [...out.querySelectorAll('.week-block')].forEach((wk, w)=>{
+                const c = wk.querySelector('.week-content');
+                if(c && c.classList.contains('open')) marks.open.push(w);
+                [...wk.querySelectorAll('.exercise-row')].forEach((row, r)=>{
+                    if(row.classList.contains('done')) marks.done.push([w, r]);
+                    const fb = row.querySelector('.fail-btn.stamped');
+                    if(fb) marks.failed.push([w, r, fb.textContent]);
+                });
+            });
+            return marks;
+        }
+        function rowAt(out, w, r){
+            const wk = out.querySelectorAll('.week-block')[w];
+            return wk ? (wk.querySelectorAll('.exercise-row')[r] || null) : null;
+        }
+        function rowIndexOf(out, row){
+            const weeks = [...out.querySelectorAll('.week-block')];
+            for(let w = 0; w < weeks.length; w++){
+                const r = [...weeks[w].querySelectorAll('.exercise-row')].indexOf(row);
+                if(r !== -1) return [w, r];
+            }
+            return null;
+        }
+        function stampRow(row, note){
+            if(!row) return;
+            row.classList.add('failed');
+            let fb = row.querySelector('.fail-btn');
+            if(!fb){ fb = document.createElement('button'); fb.type = 'button'; fb.className = 'fail-btn'; row.appendChild(fb); }
+            fb.classList.add('stamped');
+            fb.textContent = note;
+        }
+        function applyRowMarks(out, marks){
+            if(!out || !marks) return;
+            (marks.done   || []).forEach(([w, r]) => { const row = rowAt(out, w, r); if(row) row.classList.add('done'); });
+            (marks.failed || []).forEach(([w, r, note]) => stampRow(rowAt(out, w, r), note));
+            (marks.open   || []).forEach(w => {
+                const wk = out.querySelectorAll('.week-block')[w]; if(!wk) return;
+                const h = wk.querySelector('.week-header'), c = wk.querySelector('.week-content');
+                if(h) h.classList.add('open'); if(c) c.classList.add('open');
+            });
+            refreshWeekProgress(out);
+        }
+
+        let __failCtx = null;
+        function openFailDialog(btn){
+            const row = btn.closest('.exercise-row'); if(!row) return;
+            const wEl = row.querySelector('.exercise-prescription .weight');
+            const attempted = wEl ? parseFloat(wEl.textContent) : NaN;
+            const key = btn.getAttribute('data-lift');
+            if(!key || isNaN(attempted)) return;
+            __failCtx = { key, attempted, row };
+            const body = document.getElementById('failBody');
+            if(body) body.innerHTML = LIFT_LABELS[key] + ' — attempted <strong style="color:var(--text)">' + attempted + 'kg</strong>. How many full reps did you get before failing?';
+            const hint = document.getElementById('failHint');
+            if(hint) hint.textContent = 'The attempt counts as a max effort (RPE 10). Your ' + LIFT_LABELS[key] +
+                ' e1RM is re-estimated and every weight built from it is recalculated. Checked-off sets stay checked. 0 reps = 1RM taken as 95% of the attempt.';
+            const inp = document.getElementById('failReps');
+            if(inp) inp.value = '';
+            const o = document.getElementById('failOverlay');
+            if(o){ o.classList.add('show'); setTimeout(()=>{ if(inp) inp.focus(); }, 60); }
+        }
+        function closeFailDialog(e){
+            if(e && e.target && e.target.id !== 'failOverlay') return;   // ignore clicks inside the card
+            const o = document.getElementById('failOverlay');
+            if(o) o.classList.remove('show');
+        }
+        function confirmFailRecalc(){
+            if(!__failCtx) return;
+            const reps = parseInt(document.getElementById('failReps').value);
+            if(isNaN(reps) || reps < 0 || reps > 12){ showToast('Enter reps achieved, 0\u201312'); return; }
+            const { key, attempted, row } = __failCtx;
+            const newE1 = (reps === 0) ? attempted * 0.95 : calculateE1RM(attempted, reps, 10);
+
+            // Write the failed attempt into the lift's inputs so the new baseline
+            // persists and drives everything (including derived fallbacks like
+            // pause work at −20%). If the achieved reps aren't a select option,
+            // store the exact e1RM as (e1RM × 1 @ RPE 10) — identical maths.
+            const wIn = document.getElementById(key + '-weight');
+            const rIn = document.getElementById(key + '-reps');
+            const pIn = document.getElementById(key + '-rpe');
+            if(!wIn || !rIn || !pIn){ showToast('Couldn\u2019t find inputs for ' + LIFT_LABELS[key]); return; }
+            const selectable = [...rIn.options].map(o => o.value);
+            const prev = { w: wIn.value, r: rIn.value, p: pIn.value };   // rollback point
+            if(reps > 0 && selectable.includes(String(reps))){
+                wIn.value = attempted; rIn.value = String(reps); pIn.value = '10';
+            } else {
+                wIn.value = Math.round(newE1 * 2) / 2; rIn.value = '1'; pIn.value = '10';
+            }
+            try { updateE1RM(key); } catch(e){}
+
+            const out = document.getElementById('programOutput');
+            const marks = collectRowMarks(out);
+            const idx = rowIndexOf(out, row);
+            closeFailDialog();
+
+            const ok = generateProgram();
+            if(!ok){
+                // regen failed (e.g. another lift's input is blank) — restore the
+                // inputs so a failed recalc changes nothing at all
+                wIn.value = prev.w; rIn.value = prev.r; pIn.value = prev.p;
+                try { updateE1RM(key); } catch(e){}
+                showToast('Couldn\u2019t recalculate \u2014 fix the highlighted inputs first, then retry', 4200);
+                __failCtx = null; return;
+            }
+            try { saveStateSoon(); } catch(e){}
+            applyRowMarks(out, marks);
+            if(idx){
+                const fRow = rowAt(out, idx[0], idx[1]);
+                stampRow(fRow, 'failed @ ' + attempted + 'kg \u00d7 ' + reps + ' \u2014 recalculated');
+                const wk = out.querySelectorAll('.week-block')[idx[0]];
+                if(wk){
+                    const h = wk.querySelector('.week-header'), c = wk.querySelector('.week-content');
+                    if(h) h.classList.add('open'); if(c) c.classList.add('open');
+                }
+                if(fRow) setTimeout(()=>{ try { fRow.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e){} }, 150);
+            }
+            try { saveProgramSnapshot(); } catch(e){}
+            showToast('New ' + LIFT_LABELS[key] + ' e1RM: ' + (Math.round(newE1 * 10) / 10) + 'kg \u2014 program recalculated', 4200);
+            __failCtx = null;
         }
 
         // ════════ PLATE MATH ════════
@@ -5859,14 +6276,17 @@
         // ════════ COMMAND BAR ════════
         function revealCmdBar(){ const bar=document.getElementById('cmdBar'); if(bar) bar.classList.add('show'); }
         function cmdGenerate(){
-            generateProgram();
-            const out=document.getElementById('programOutput');
-            if(out && out.classList.contains('visible')){
+            const ok = generateProgram();
+            if(ok){
+                const out=document.getElementById('programOutput');
                 saveProgramSnapshot();
                 afterGenerate();
-                out.scrollIntoView({behavior:'smooth'});
+                if(out) out.scrollIntoView({behavior:'smooth'});
             }
+            // If generation failed (validation/gate), leave the form visible so the
+            // user can fix inputs — don't hide it or strand the old program.
         }
+
 
         // ---- wire up global listeners once DOM is ready ----
         document.addEventListener('DOMContentLoaded', ()=>{
@@ -5877,7 +6297,15 @@
                 const pop = document.getElementById('platePop');
                 if(pop && pop.classList.contains('show') && !e.target.closest('#platePop') && !e.target.closest('.weight')) hidePlatePop();
             });
-            document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAllSheets(); hidePlatePop(); } });
+            buildRpeReference();
+            document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAllSheets(); hidePlatePop(); closeFailDialog(); } });
+            // Enter/Space activate the div-based headers (they carry tabindex)
+            document.addEventListener('keydown', (e)=>{
+                if((e.key === 'Enter' || e.key === ' ') && e.target &&
+                   (e.target.classList.contains('collapsible-header') || e.target.classList.contains('week-header'))){
+                    e.preventDefault(); e.target.click();
+                }
+            });
             window.addEventListener('resize', hidePlatePop, { passive:true });
             // restore saved inputs (lifts, options, calorie calc) from this device
             restoreState();
@@ -5948,6 +6376,7 @@
                     document.body.classList.add('light-theme');
                     const tb = document.querySelector('.theme-toggle'); if(tb) tb.textContent = '🌙 Dark';
                 }
+                syncThemeColor();
                 if(Array.isArray(saved.__mealShares)) __mealShares = saved.__mealShares.slice();
             }
             try { handleFocusChange(); } catch(e){}      // builds substitution selects for the restored program
@@ -6007,6 +6436,7 @@
             const out = document.getElementById('programOutput');
             if(out){
                 out.innerHTML = html;
+                decorateOutput(out);
                 out.classList.add('visible');
                 showExportButtons();
                 revealCmdBar();
@@ -6087,7 +6517,7 @@
             for(let i=0;i<meals;i++){
                 rows += '<div class="cal-meal-row">'
                     + '<span class="cal-meal-label">Meal ' + (i+1) + '</span>'
-                    + '<span class="cal-meal-weight">weight <input type="number" min="0" step="1" class="cal-meal-share" data-i="' + i + '" value="' + (__mealShares[i] != null ? __mealShares[i] : 1) + '" oninput="onMealShareInput(this)"></span>'
+                    + '<span class="cal-meal-weight">weight <input type="number" inputmode="decimal" min="0" step="1" class="cal-meal-share" data-i="' + i + '" value="' + (__mealShares[i] != null ? __mealShares[i] : 1) + '" oninput="onMealShareInput(this)"></span>'
                     + '<span class="cal-meal-pct"></span>'
                     + '<span class="cal-meal-kcal"></span>'
                     + '</div>';
@@ -6162,6 +6592,7 @@
                 const tb = document.querySelector('.theme-toggle');
                 if(o.__theme === 'light'){ document.body.classList.add('light-theme'); if(tb) tb.textContent = '🌙 Dark'; }
                 else { document.body.classList.remove('light-theme'); if(tb) tb.textContent = '☀ Light'; }
+                syncThemeColor();
                 if(Array.isArray(o.__mealShares)) __mealShares = o.__mealShares.slice();
                 try { handleFocusChange(); } catch(e){}
                 applyState(o);
@@ -6197,6 +6628,24 @@
     </div>
 
     <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeAllSheets()"></div>
+
+    <!-- ════ Failed top set → reps achieved → recalc ════ -->
+    <div class="confirm-overlay" id="failOverlay" onclick="closeFailDialog(event)">
+        <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="failTitle">
+            <div class="confirm-title" id="failTitle">Failed top set</div>
+            <div class="confirm-body" id="failBody"></div>
+            <div class="input-group" style="margin-bottom:14px;">
+                <label>Reps achieved (full reps only)</label>
+                <input type="number" inputmode="numeric" id="failReps" min="0" max="12" step="1" placeholder="e.g. 3"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();confirmFailRecalc();}">
+            </div>
+            <div class="confirm-body" id="failHint" style="font-size:0.72rem;color:var(--text-muted);"></div>
+            <div class="confirm-actions">
+                <button class="confirm-cancel" onclick="closeFailDialog()">Cancel</button>
+                <button class="confirm-ok" onclick="confirmFailRecalc()">Recalculate</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ════ Text export sheet ════ -->
     <section class="sheet" id="exportSheet" aria-label="Text export">
