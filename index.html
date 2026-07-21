@@ -1636,7 +1636,7 @@
         // Fraction to drop OFF the top set for a rep-holding back-off.
         // Two jobs kept separate on purpose:
         //   1. base drop scales with rep range (higher reps bleed more per set)
-        //   2. recoveryAdj deepens the drop as the top set gets brutal — this
+        //   2. recoveryAdj deepens the drop as the top set gets brutal. This
         //      tracks fatigue for recoverability, it is NOT the progression.
         // Progression lives in set count / rest, not here (see boSets below).
         function backoffDrop(targetReps, topRpe) {
@@ -2092,28 +2092,28 @@
                 beginner_machine: { showDays: false, showRepRange: false, showProgress: false, showLifts: false,
                                     hiddenMain: [],
                                     visibleSec: [] },
-                rpe_cutting:      { showDays: true,  showRepRange: false, showProgress: false, showLifts: true,
+                rpe_cutting:      { showDays: true,  showRepRange: true , showProgress: false, showLifts: true,
                                     hiddenMain: [],
                                     visibleSec: [] },
-                mass_builder:     { showDays: false, showRepRange: false, showProgress: true,  showLifts: true,
+                mass_builder:     { showDays: false, showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: ['deadBlock','benchBlock','ohpBlock'],
                                     visibleSec: ['rdlBlock'] },
-                mass_builder_plus:{ showDays: false, showRepRange: false, showProgress: true,  showLifts: true,
+                mass_builder_plus:{ showDays: false, showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: ['deadBlock','benchBlock','ohpBlock'],
                                     visibleSec: ['rdlBlock'] },
                 peaking_block:    { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
                                     hiddenMain: ['ohpBlock'],
                                     visibleSec: [] },
-                bulgarian_lite:   { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
+                bulgarian_lite:   { showDays: false, showRepRange: true , showProgress: false, showLifts: true,
                                     hiddenMain: ['ohpBlock'],
                                     visibleSec: [] },
-                shoulder_growth:  { showDays: true,  showRepRange: false, showProgress: true,  showLifts: true,
+                shoulder_growth:  { showDays: true,  showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: is3 ? ['squatBlock'] : [],
                                     visibleSec: is3 ? ['larsenBlock'] : ['rdlBlock','larsenBlock'] },
-                arm_growth:       { showDays: true,  showRepRange: false, showProgress: true,  showLifts: true,
+                arm_growth:       { showDays: true,  showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: is3 ? ['squatBlock'] : [],
                                     visibleSec: is3 ? [] : ['rdlBlock'] },
-                leg_growth:       { showDays: false, showRepRange: false, showProgress: true,  showLifts: true,
+                leg_growth:       { showDays: false, showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: [],
                                     visibleSec: ['rdlBlock'] },
                 advanced_rpe:     { showDays: false, showRepRange: true,  showProgress: true,  showLifts: true,
@@ -2659,22 +2659,22 @@
             } else if (isHHHAdv) {
                 html = buildHHHAdvancedProgram(e1rms);
             } else if (isCutting) {
-                html = buildCuttingProgram(e1rms, days);
+                html = buildCuttingProgram(e1rms, days, targetReps);
             } else if (isMassBuilder) {
-                html = buildMassBuilderProgram(e1rms, gluteBridgeW, progressGoal);
+                html = buildMassBuilderProgram(e1rms, gluteBridgeW, progressGoal, targetReps);
             } else if (isMassBuilderPlus) {
                 const gbwPlus = dunnoState.glutebridge ? null : gluteBridgeW;
-                html = buildMassBuilderPlusProgram(e1rms, dunnoState, gbwPlus, progressGoal);
+                html = buildMassBuilderPlusProgram(e1rms, dunnoState, gbwPlus, progressGoal, targetReps);
             } else if (isPeaking) {
                 html = buildPeakingProgram(e1rms);
             } else if (isBulgarian) {
-                html = buildBulgarianProgram(e1rms);
+                html = buildBulgarianProgram(e1rms, targetReps);
             } else if (isShoulderGrowth) {
-                html = buildShoulderGrowthProgram(e1rms, progressGoal);
+                html = buildShoulderGrowthProgram(e1rms, progressGoal, targetReps);
             } else if (isArmGrowth) {
-                html = buildArmGrowthProgram(e1rms, progressGoal);
+                html = buildArmGrowthProgram(e1rms, progressGoal, targetReps);
             } else if (isLegGrowth) {
-                html = buildLegGrowthProgram(e1rms, progressGoal);
+                html = buildLegGrowthProgram(e1rms, progressGoal, targetReps);
             } else if (isAdvancedRPE) {
                 html = buildAdvancedRPEProgram(e1rms, targetReps, progressGoal);
             } else {
@@ -3193,7 +3193,7 @@
         //  RPE CUTTING PROGRAM
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildCuttingProgram(e1rms, days) {
+        function buildCuttingProgram(e1rms, days, tr) {
             const weekColors  = ['weekc-1','weekc-2','weekc-3','weekc-4','weekc-5','weekc-6','weekc-7','weekc-8'];
             const weekBadges  = ['RPE 6','RPE 6.5','RPE 7','RPE 7.5','RPE 8','RPE 8','RPE 8','RPE 8'];
             let html = '';
@@ -3209,7 +3209,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w===0?'open':''}">
-                            ${buildCuttingWeekContent(e1rms, rpe, false, days, cardioDuration, w+1)}
+                            ${buildCuttingWeekContent(e1rms, rpe, false, days, cardioDuration, w+1, tr)}
                         </div>
                     </div>`;
             }
@@ -3223,7 +3223,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${buildCuttingWeekContent(e1rms, 6, true, days, 20, 9)}
+                        ${buildCuttingWeekContent(e1rms, 6, true, days, 20, 9, tr)}
                     </div>
                 </div>`;
 
@@ -3235,62 +3235,62 @@
             return html;
         }
 
-        function buildCuttingWeekContent(e1rms, rpe, isDeload, days, cardioDuration, weekNum) {
+        function buildCuttingWeekContent(e1rms, rpe, isDeload, days, cardioDuration, weekNum, tr) {
             const cardioDays = days === '4' ? 3 : 4;
             let html = '';
             if (days === '4') {
-                html += cuttingSquatDay(e1rms, rpe, isDeload, 1);
-                html += cuttingBenchDay(e1rms, rpe, isDeload, 2);
-                html += cuttingDeadliftDay(e1rms, rpe, isDeload, 3);
-                html += cuttingMilitaryPressDay(e1rms, rpe, isDeload, 4);
+                html += cuttingSquatDay(e1rms, rpe, isDeload, 1, tr);
+                html += cuttingBenchDay(e1rms, rpe, isDeload, 2, tr);
+                html += cuttingDeadliftDay(e1rms, rpe, isDeload, 3, tr);
+                html += cuttingMilitaryPressDay(e1rms, rpe, isDeload, 4, tr);
             } else {
-                html += cuttingBenchDay(e1rms, rpe, isDeload, 1);
-                html += cuttingCombinedLegsDay(e1rms, rpe, isDeload, 2);
-                html += cuttingMilitaryPressDay(e1rms, rpe, isDeload, 3);
+                html += cuttingBenchDay(e1rms, rpe, isDeload, 1, tr);
+                html += cuttingCombinedLegsDay(e1rms, rpe, isDeload, 2, tr);
+                html += cuttingMilitaryPressDay(e1rms, rpe, isDeload, 3, tr);
             }
             html += cuttingCardioBlock(cardioDuration, cardioDays, isDeload);
             return html;
         }
 
-        function cuttingPyramid(e1rm, rpe) {
+        function cuttingPyramid(e1rm, rpe, tr) {
             // Empty-bar floor (20kg) must apply to EVERY set or a very light trainee
             // ends up with a "top set" lighter than the back-offs (inverted pyramid).
             const BAR = 20;
-            const top = Math.max(roundToPlate(calculateWeight(e1rm, 8, rpe)), BAR);
+            const top = Math.max(roundToPlate(calculateWeight(e1rm, tr, rpe)), BAR);
             const s2  = Math.max(roundToPlate(top - 10), BAR);
             const s3  = Math.max(roundToPlate(top - 20), BAR);
             const deload = Math.max(roundToPlate(top * 0.65), BAR);
             return { top, s2, s3, deload };
         }
 
-        function pyramidRows(liftName, w, isDeload) {
+        function pyramidRows(liftName, w, isDeload, tr) {
             if (isDeload) {
                 return `<div class="exercise-row">
                     <span class="exercise-name main">${liftName}<span class="exercise-label">Deload</span></span>
-                    <span class="exercise-prescription">2×8 @ <span class="weight">${w.deload}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${w.deload}kg</span></span>
                 </div>`;
             }
             return `
                 <div class="exercise-row">
                     <span class="exercise-name main">${liftName}<span class="exercise-label">Set 1</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${w.top}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${w.top}kg</span></span>
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">${liftName}<span class="exercise-label">Set 2 (−10kg)</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${w.s2}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${w.s2}kg</span></span>
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">${liftName}<span class="exercise-label">Set 3 (−20kg)</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${w.s3}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${w.s3}kg</span></span>
                 </div>`;
         }
 
-        function cuttingSquatDay(e1rms, rpe, isDeload, dayNum) {
-            const w = cuttingPyramid(e1rms.squat, rpe);
+        function cuttingSquatDay(e1rms, rpe, isDeload, dayNum, tr) {
+            const w = cuttingPyramid(e1rms.squat, rpe, tr);
             const sets = isDeload ? 2 : 3;
             return `<div class="day-block">
                 <div class="day-title">Day ${dayNum}: Squat${isDeload?' (Deload)':''}</div>
-                ${pyramidRows('Squat', w, isDeload)}
+                ${pyramidRows('Squat', w, isDeload, tr)}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
                     <div class="exercise-row"><span class="exercise-name accessory">Leg Press</span><span class="exercise-prescription">3×12</span></div>
@@ -3304,11 +3304,11 @@
             </div>`;
         }
 
-        function cuttingBenchDay(e1rms, rpe, isDeload, dayNum) {
-            const w = cuttingPyramid(e1rms.bench, rpe);
+        function cuttingBenchDay(e1rms, rpe, isDeload, dayNum, tr) {
+            const w = cuttingPyramid(e1rms.bench, rpe, tr);
             return `<div class="day-block">
                 <div class="day-title">Day ${dayNum}: Bench Press${isDeload?' (Deload)':''}</div>
-                ${pyramidRows('Bench Press', w, isDeload)}
+                ${pyramidRows('Bench Press', w, isDeload, tr)}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
                     <div class="exercise-row"><span class="exercise-name secondary">Lat Pulldown</span><span class="exercise-prescription">3×12</span></div>
@@ -3324,11 +3324,11 @@
             </div>`;
         }
 
-        function cuttingDeadliftDay(e1rms, rpe, isDeload, dayNum) {
-            const w = cuttingPyramid(e1rms.dead, rpe);
+        function cuttingDeadliftDay(e1rms, rpe, isDeload, dayNum, tr) {
+            const w = cuttingPyramid(e1rms.dead, rpe, tr);
             return `<div class="day-block">
                 <div class="day-title">Day ${dayNum}: Deadlift${isDeload?' (Deload)':''}</div>
-                ${pyramidRows('Deadlift', w, isDeload)}
+                ${pyramidRows('Deadlift', w, isDeload, tr)}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
                     <div class="exercise-row"><span class="exercise-name secondary">Front Squat / High Bar Squat</span><span class="exercise-prescription">3×8</span></div>
@@ -3342,11 +3342,11 @@
             </div>`;
         }
 
-        function cuttingMilitaryPressDay(e1rms, rpe, isDeload, dayNum) {
-            const w = cuttingPyramid(e1rms.ohp, rpe);
+        function cuttingMilitaryPressDay(e1rms, rpe, isDeload, dayNum, tr) {
+            const w = cuttingPyramid(e1rms.ohp, rpe, tr);
             return `<div class="day-block">
                 <div class="day-title">Day ${dayNum}: Military Press (Strict OHP)${isDeload?' (Deload)':''}</div>
-                ${pyramidRows('Military Press', w, isDeload)}
+                ${pyramidRows('Military Press', w, isDeload, tr)}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
                     <div class="exercise-row"><span class="exercise-name secondary">Bent Over Row / Pendlay Row</span><span class="exercise-prescription">3×10</span></div>
@@ -3364,14 +3364,14 @@
             </div>`;
         }
 
-        function cuttingCombinedLegsDay(e1rms, rpe, isDeload, dayNum) {
-            const sqW  = cuttingPyramid(e1rms.squat, rpe);
-            const dlW  = cuttingPyramid(e1rms.dead, rpe);
+        function cuttingCombinedLegsDay(e1rms, rpe, isDeload, dayNum, tr) {
+            const sqW  = cuttingPyramid(e1rms.squat, rpe, tr);
+            const dlW  = cuttingPyramid(e1rms.dead, rpe, tr);
             return `<div class="day-block">
                 <div class="day-title">Day ${dayNum}: Squat + Deadlift${isDeload?' (Deload)':''}</div>
-                ${pyramidRows('Squat', sqW, isDeload)}
+                ${pyramidRows('Squat', sqW, isDeload, tr)}
                 <div class="section-divider"></div>
-                ${pyramidRows('Deadlift', dlW, isDeload)}
+                ${pyramidRows('Deadlift', dlW, isDeload, tr)}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
                     <div class="exercise-row"><span class="exercise-name accessory">Leg Press</span><span class="exercise-prescription">3×12</span></div>
@@ -3406,7 +3406,7 @@
         //  m(ASS) Builder
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildMassBuilderProgram(e1rms, gluteBridgeW, progressionGoal) {
+        function buildMassBuilderProgram(e1rms, gluteBridgeW, progressionGoal, tr) {
             const mbRPE    = [7, 8, 8.5, 9];
             const mbBadges = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
             let html = '';
@@ -3422,7 +3422,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w===0?'open':''}">
-                            ${buildMassBuilderWeek(e1rms, rpe, false, isWeek4, progressionGoal, gluteBridgeW)}
+                            ${buildMassBuilderWeek(e1rms, rpe, false, isWeek4, progressionGoal, gluteBridgeW, tr)}
                         </div>
                     </div>`;
             }
@@ -3436,7 +3436,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${buildMassBuilderWeek(e1rms, 6, true, false, progressionGoal, gluteBridgeW)}
+                        ${buildMassBuilderWeek(e1rms, 6, true, false, progressionGoal, gluteBridgeW, tr)}
                     </div>
                 </div>`;
 
@@ -3449,15 +3449,14 @@
             return html;
         }
 
-        function buildMassBuilderWeek(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW) {
-            return massDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW)
+        function buildMassBuilderWeek(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW, tr) {
+            return massDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW, tr)
                  + massDay2(isDeload)
-                 + massDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW)
+                 + massDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, gluteBridgeW, tr)
                  + massDay4(isDeload);
         }
 
-        function massDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW) {
-            const tr = 8;
+        function massDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW, tr) {
             let top = roundToPlate(calculateWeight(e1rms.squat, tr, rpe));
             if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
@@ -3472,7 +3471,7 @@
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">Squat<span class="exercise-label">Back-off</span></span>
-                    <span class="exercise-prescription">${boffSets}×8 @ <span class="weight">${backoff}kg</span></span>
+                    <span class="exercise-prescription">${boffSets}×${tr} @ <span class="weight">${backoff}kg</span></span>
                 </div>
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name secondary">Kneeling Smith Machine Squat</span><span class="exercise-prescription">${sets}×12</span></div>
@@ -3511,8 +3510,7 @@
             </div>`;
         }
 
-        function massDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW) {
-            const tr = 8;
+        function massDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW, tr) {
             let top = roundToPlate(calculateWeight(e1rms.rdl, tr, rpe));
             if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
@@ -3527,7 +3525,7 @@
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">RDL<span class="exercise-label">Back-off</span></span>
-                    <span class="exercise-prescription">${boffSets}×8 @ <span class="weight">${backoff}kg</span></span>
+                    <span class="exercise-prescription">${boffSets}×${tr} @ <span class="weight">${backoff}kg</span></span>
                 </div>
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name secondary">DB Split Squat</span><span class="exercise-prescription">${sets}×15</span></div>
@@ -3570,7 +3568,7 @@
         //  "Don't know" (or leave blank) and they're prescribed by feel / bodyweight.
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildMassBuilderPlusProgram(e1rms, dunno, gluteBridgeW, progressionGoal) {
+        function buildMassBuilderPlusProgram(e1rms, dunno, gluteBridgeW, progressionGoal, tr) {
             const mbRPE    = [7, 8, 8.5, 9];
             const mbBadges = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
             let html = '';
@@ -3586,7 +3584,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w===0?'open':''}">
-                            ${mbpWeek(e1rms, rpe, false, isWeek4, progressionGoal, dunno, gluteBridgeW)}
+                            ${mbpWeek(e1rms, rpe, false, isWeek4, progressionGoal, dunno, gluteBridgeW, tr)}
                         </div>
                     </div>`;
             }
@@ -3600,7 +3598,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${mbpWeek(e1rms, 6, true, false, progressionGoal, dunno, gluteBridgeW)}
+                        ${mbpWeek(e1rms, 6, true, false, progressionGoal, dunno, gluteBridgeW, tr)}
                     </div>
                 </div>`;
 
@@ -4190,10 +4188,10 @@
             return html;
         }
 
-        function mbpWeek(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW) {
-            return mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW)
+        function mbpWeek(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW, tr) {
+            return mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW, tr)
                  + mbpDay2(isDeload)
-                 + mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno)
+                 + mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, tr)
                  + mbpDay4(isDeload, dunno, gbW);
         }
 
@@ -4225,9 +4223,9 @@
         }
 
         // ── Day 1: Glutes + Deep Core ──
-        function mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW) {
+        function mbpDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, gbW, tr) {
             const sets = isDeload ? 2 : 3;
-            const squatRows = mbpMainRows('Squat', e1rms.squat, dunno.squat, 8, rpe, isDeload, isWeek4, progressionGoal, 'Goblet Squat', '10-12');
+            const squatRows = mbpMainRows('Squat', e1rms.squat, dunno.squat, tr, rpe, isDeload, isWeek4, progressionGoal, 'Goblet Squat', '10-12');
             const hipThrust = gbW
                 ? `<div class="exercise-row"><span class="exercise-name secondary">Hip Thrust / Glute Bridge</span><span class="exercise-prescription">${sets}×10-12 @ <span class="weight">${gbW}kg</span></span></div>`
                 : `<div class="exercise-row"><span class="exercise-name secondary">Hip Thrust / Glute Bridge<span class="exercise-label">bodyweight — add load when easy</span></span><span class="exercise-prescription">${sets}×12-15</span></div>`;
@@ -4260,9 +4258,9 @@
         }
 
         // ── Day 3: Hamstrings / Glutes + Anti-Rotation ──
-        function mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno) {
+        function mbpDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, dunno, tr) {
             const sets = isDeload ? 2 : 3;
-            const rdlRows = mbpMainRows('RDL', e1rms.rdl, dunno.rdl, 8, rpe, isDeload, isWeek4, progressionGoal, 'DB Romanian Deadlift', '10-12');
+            const rdlRows = mbpMainRows('RDL', e1rms.rdl, dunno.rdl, tr, rpe, isDeload, isWeek4, progressionGoal, 'DB Romanian Deadlift', '10-12');
             return `<div class="day-block core-block">
                 <div class="day-title">Day 3: Hamstrings, Glutes &amp; Anti-Rotation${isDeload?' (Deload)':''}</div>
                 ${rdlRows}
@@ -4465,7 +4463,7 @@
         //  BULGARIAN LITE — High Frequency
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildBulgarianProgram(e1rms) {
+        function buildBulgarianProgram(e1rms, tr) {
             // 4 weeks + deload. 5 days/week.
             // Squat every day. Bench 5x/week. Deadlift Day 3 only.
             // Work up to a daily max at target RPE, then 2 back-off sets at 80%.
@@ -4484,7 +4482,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w === 0 ? 'open' : ''}">
-                            ${bulgarianWeekContent(e1rms, rpe, false)}
+                            ${bulgarianWeekContent(e1rms, rpe, false, tr)}
                         </div>
                     </div>`;
             }
@@ -4498,7 +4496,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${bulgarianWeekContent(e1rms, 6, true)}
+                        ${bulgarianWeekContent(e1rms, 6, true, tr)}
                     </div>
                 </div>`;
 
@@ -4511,12 +4509,12 @@
             return html;
         }
 
-        function bulgarianWeekContent(e1rms, rpe, isDeload) {
-            const sqTop  = roundToPlate(calculateWeight(e1rms.squat, 1, rpe));
-            const bTop   = roundToPlate(calculateWeight(e1rms.bench, 1, rpe));
+        function bulgarianWeekContent(e1rms, rpe, isDeload, tr) {
+            const sqTop  = roundToPlate(calculateWeight(e1rms.squat, tr, rpe));
+            const bTop   = roundToPlate(calculateWeight(e1rms.bench, tr, rpe));
             const sqBoff = roundToPlate(sqTop * 0.80);
             const bBoff  = roundToPlate(bTop  * 0.80);
-            const dTop   = e1rms.dead ? roundToPlate(calculateWeight(e1rms.dead, 1, Math.min(rpe, 8))) : null;
+            const dTop   = e1rms.dead ? roundToPlate(calculateWeight(e1rms.dead, tr, Math.min(rpe, 8))) : null;
             const dBoff  = dTop ? roundToPlate(dTop * 0.80) : null;
             const sets   = isDeload ? 1 : 2;
             const label  = isDeload ? 'Deload — feel only' : 'Daily Max';
@@ -4524,21 +4522,21 @@
             const squatBlock = (dayNum) => `
                 <div class="exercise-row">
                     <span class="exercise-name main">Squat<span class="exercise-label">${label}</span></span>
-                    <span class="exercise-prescription">1×1 @ <span class="weight">${sqTop}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${sqTop}kg</span></span>
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">Squat<span class="exercise-label">Back-off</span></span>
-                    <span class="exercise-prescription">${sets}×2 @ <span class="weight">${sqBoff}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${sqBoff}kg</span></span>
                 </div>`;
 
             const benchBlock = () => `
                 <div class="exercise-row">
                     <span class="exercise-name main">Bench Press<span class="exercise-label">${label}</span></span>
-                    <span class="exercise-prescription">1×1 @ <span class="weight">${bTop}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${bTop}kg</span></span>
                 </div>
                 <div class="exercise-row">
                     <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off</span></span>
-                    <span class="exercise-prescription">${sets}×2 @ <span class="weight">${bBoff}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${bBoff}kg</span></span>
                 </div>`;
 
             return `
@@ -4553,12 +4551,12 @@
                     <div class="day-title">Day 2 — Lighter${isDeload ? ' (Deload)' : ''}</div>
                     <div class="exercise-row">
                         <span class="exercise-name main">Squat<span class="exercise-label">Submaximal</span></span>
-                        <span class="exercise-prescription">3×2 @ <span class="weight">${sqBoff}kg</span></span>
+                        <span class="exercise-prescription">3×${tr} @ <span class="weight">${sqBoff}kg</span></span>
                     </div>
                     <div class="section-divider"></div>
                     <div class="exercise-row">
                         <span class="exercise-name main">Bench Press<span class="exercise-label">Submaximal</span></span>
-                        <span class="exercise-prescription">3×2 @ <span class="weight">${bBoff}kg</span></span>
+                        <span class="exercise-prescription">3×${tr} @ <span class="weight">${bBoff}kg</span></span>
                     </div>
                 </div>
 
@@ -4569,11 +4567,11 @@
                     ${dTop ? `
                     <div class="exercise-row">
                         <span class="exercise-name main">Deadlift<span class="exercise-label">Submaximal — capped RPE 8</span></span>
-                        <span class="exercise-prescription">1×1 @ <span class="weight">${dTop}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${dTop}kg</span></span>
                     </div>
                     <div class="exercise-row">
                         <span class="exercise-name backoff">Deadlift<span class="exercise-label">Back-off</span></span>
-                        <span class="exercise-prescription">${sets}×2 @ <span class="weight">${dBoff}kg</span></span>
+                        <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${dBoff}kg</span></span>
                     </div>` : `
                     <div class="exercise-row">
                         <span class="exercise-name accessory">Deadlift</span>
@@ -4602,7 +4600,7 @@
         //  SHOULDER GROWTH FOCUS
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildShoulderGrowthProgram(e1rms, progressGoal) {
+        function buildShoulderGrowthProgram(e1rms, progressGoal, tr) {
             const topRPE    = [7, 8, 8.5, 9];
             const badges    = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
             const wColors   = ['week-1','week-2','week-3','week-4','week-5'];
@@ -4618,7 +4616,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w === 0 ? 'open' : ''}">
-                            ${sgWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal)}
+                            ${sgWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal, tr)}
                         </div>
                     </div>`;
             }
@@ -4631,7 +4629,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${sgWeekContent(e1rms, 6, true, false, progressGoal)}
+                        ${sgWeekContent(e1rms, 6, true, false, progressGoal, tr)}
                     </div>
                 </div>`;
 
@@ -4646,12 +4644,12 @@
             return html;
         }
 
-        function sgWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function sgWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const days = document.getElementById('trainingDays').value;
-            return sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + sgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + sgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + (days === '4' ? sgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal) : '');
+            return sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + sgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + sgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + (days === '4' ? sgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) : '');
         }
 
         // Clamp RPE to valid rpeChart keys
@@ -4671,12 +4669,12 @@
         }
 
         // ── Day 1: Larsen Press focus + chest/back/shoulder accessories ──────────
-        function sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const larsenE1rm = e1rms.larsen || (e1rms.bench * 0.90);
-            let lTop  = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, 6, clampRpe(topRpe))) : null;
+            let lTop  = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe))) : null;
             if (isWeek4 && !isDeload && progressGoal === 'weight' && lTop) lTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            const lBoff = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, 8, clampRpe(topRpe - 1))) : null;
+            const lBoff = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe - 1))) : null;
 
             const larsenLabel = e1rms.larsen ? 'Top Set' : 'Top Set — bench −10%';
             const larsenBoffLabel = e1rms.larsen ? 'Back-off' : 'Back-off — bench −10%';
@@ -4684,15 +4682,15 @@
             const larsenRows = isDeload
                 ? `<div class="exercise-row">
                     <span class="exercise-name main">Larsen Press<span class="exercise-label">Deload</span></span>
-                    <span class="exercise-prescription">2×6 @ <span class="weight">${roundToPlate(lTop * 0.65)}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${roundToPlate(lTop * 0.65)}kg</span></span>
                    </div>`
                 : `<div class="exercise-row">
                     <span class="exercise-name main">Larsen Press<span class="exercise-label">${isAmrap ? 'AMRAP' : larsenLabel} · RPE ${clampRpe(topRpe)}</span></span>
-                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${lTop}kg</span></span>
+                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${lTop}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Larsen Press<span class="exercise-label">${larsenBoffLabel} · RPE ${clampRpe(topRpe - 1)}</span></span>
-                    <span class="exercise-prescription">2×8 @ <span class="weight">${lBoff}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${lBoff}kg</span></span>
                    </div>`;
 
             return `<div class="day-block">
@@ -4747,45 +4745,45 @@
         }
 
         // ── Day 2: Deadlift + 3-Count Bench + accessories ────────────────────────
-        function sgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function sgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             // Deadlift: 3 descending sets at 8 reps (RPE top, top-1, top-2)
             const isAmrapDead = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [d1, d2, d3] = sgDescending(e1rms.dead, 8, topRpe, 3);
+            let [d1, d2, d3] = sgDescending(e1rms.dead, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') d1 += 2.5;
             const dDeload = roundToPlate(d1 * 0.65);
 
             // 3-count bench: calculated from bench e1rm at same RPE, then -10%
             const benchE1rm = e1rms.bench;
             const cBenchRpe = clampRpe(topRpe - 1);
-            const cBenchFull = benchE1rm ? roundToPlate(calculateWeight(benchE1rm, 6, cBenchRpe)) : null;
+            const cBenchFull = benchE1rm ? roundToPlate(calculateWeight(benchE1rm, tr, cBenchRpe)) : null;
             const cBenchW    = cBenchFull ? roundToPlate(cBenchFull * 0.90) : null;
 
             const deadRows = isDeload
                 ? `<div class="exercise-row">
                     <span class="exercise-name main">Deadlift<span class="exercise-label">Deload</span></span>
-                    <span class="exercise-prescription">2×8 @ <span class="weight">${dDeload}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${dDeload}kg</span></span>
                    </div>`
                 : `<div class="exercise-row">
                     <span class="exercise-name main">Deadlift<span class="exercise-label">${isAmrapDead ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                    <span class="exercise-prescription">1×${isAmrapDead ? 'AMRAP' : 8} @ <span class="weight">${d1}kg</span></span>
+                    <span class="exercise-prescription">1×${isAmrapDead ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${d2}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${d3}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                    </div>`;
 
             const benchRow = isDeload
                 ? `<div class="exercise-row">
                     <span class="exercise-name secondary">3-Count Bench Press<span class="exercise-label">Deload — bench −10%</span></span>
-                    <span class="exercise-prescription">2×6 @ <span class="weight">${roundToPlate(cBenchW * 0.65)}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${roundToPlate(cBenchW * 0.65)}kg</span></span>
                    </div>`
                 : `<div class="exercise-row">
                     <span class="exercise-name secondary">3-Count Bench Press<span class="exercise-label">Bench −10% · RPE ${cBenchRpe}</span></span>
-                    <span class="exercise-prescription">3×6 @ <span class="weight">${cBenchW}kg</span></span>
+                    <span class="exercise-prescription">3×${tr} @ <span class="weight">${cBenchW}kg</span></span>
                    </div>`;
 
             return `<div class="day-block">
@@ -4829,28 +4827,28 @@
         }
 
         // ── Day 3: OHP + Pendlay Row + shoulder volume ───────────────────────────
-        function sgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function sgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [o1, o2, o3] = sgDescending(e1rms.ohp, 8, topRpe, 3);
+            let [o1, o2, o3] = sgDescending(e1rms.ohp, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') o1 += 2.5;
             const oDeload = roundToPlate(o1 * 0.65);
 
             const ohpRows = isDeload
                 ? `<div class="exercise-row">
                     <span class="exercise-name main">Strict OHP<span class="exercise-label">Deload</span></span>
-                    <span class="exercise-prescription">2×8 @ <span class="weight">${oDeload}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${oDeload}kg</span></span>
                    </div>`
                 : `<div class="exercise-row">
                     <span class="exercise-name main">Strict OHP → Push Press<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)} — continue to failure with leg drive</span></span>
-                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : '8+'} @ <span class="weight">${o1}kg</span></span>
+                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr + '+'} @ <span class="weight">${o1}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                    <span class="exercise-prescription">1×8+ @ <span class="weight">${o2}kg</span></span>
+                    <span class="exercise-prescription">1×${tr}+ @ <span class="weight">${o2}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                    <span class="exercise-prescription">1×8+ @ <span class="weight">${o3}kg</span></span>
+                    <span class="exercise-prescription">1×${tr}+ @ <span class="weight">${o3}kg</span></span>
                    </div>`;
 
             return `<div class="day-block">
@@ -4906,34 +4904,34 @@
         }
 
         // ── Day 4: Squat + RDL + legs ────────────────────────────────────────────
-        function sgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function sgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe)));
+            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, 8, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
+            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
             const sDeload = roundToPlate(sTop * 0.65);
 
             // RDL: optional — use rdl e1rm or deadlift * 0.7 as fallback
             const rdlE1rm = e1rms.rdl || (e1rms.dead ? e1rms.dead * 0.80 : null);
-            const rdlW    = rdlE1rm ? roundToPlate(calculateWeight(rdlE1rm, 8, clampRpe(topRpe - 1))) : null;
+            const rdlW    = rdlE1rm ? roundToPlate(calculateWeight(rdlE1rm, tr, clampRpe(topRpe - 1))) : null;
 
             const squatRows = isDeload
                 ? `<div class="exercise-row">
                     <span class="exercise-name main">Squat<span class="exercise-label">Deload</span></span>
-                    <span class="exercise-prescription">2×6 @ <span class="weight">${sDeload}kg</span></span>
+                    <span class="exercise-prescription">2×${tr} @ <span class="weight">${sDeload}kg</span></span>
                    </div>`
                 : `<div class="exercise-row">
                     <span class="exercise-name main">Squat<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${sTop}kg</span></span>
+                    <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                    <span class="exercise-prescription">1×6 @ <span class="weight">${sMid}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                    </div>
                    <div class="exercise-row">
                     <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                    <span class="exercise-prescription">1×8 @ <span class="weight">${sLow}kg</span></span>
+                    <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                    </div>`;
 
             return `<div class="day-block">
@@ -4979,7 +4977,7 @@
         //  ARM GROWTH FOCUS
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildArmGrowthProgram(e1rms, progressGoal) {
+        function buildArmGrowthProgram(e1rms, progressGoal, tr) {
             const topRPE  = [7, 8, 8.5, 9];
             const badges  = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
             let html = '';
@@ -4993,7 +4991,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w===0?'open':''}">
-                            ${agWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal)}
+                            ${agWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal, tr)}
                         </div>
                     </div>`;
             }
@@ -5005,7 +5003,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${agWeekContent(e1rms, 6, true, false, progressGoal)}
+                        ${agWeekContent(e1rms, 6, true, false, progressGoal, tr)}
                     </div>
                 </div>`;
             html += `<div class="info-box">
@@ -5018,19 +5016,19 @@
             return html;
         }
 
-        function agWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function agWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const days = document.getElementById('trainingDays').value;
-            return agDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + agDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + agDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + (days === '4' ? agDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal) : '');
+            return agDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + agDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + agDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + (days === '4' ? agDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) : '');
         }
 
-        function agDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function agDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let bTop  = roundToPlate(calculateWeight(e1rms.bench, 6, clampRpe(topRpe)));
+            let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
-            const bBoff = roundToPlate(calculateWeight(e1rms.bench, 8, clampRpe(topRpe - 1)));
+            const bBoff = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe - 1)));
             const sets  = isDeload ? 2 : 3;
             const sSets = isDeload ? 2 : 4;
 
@@ -5039,15 +5037,15 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Bench Press<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×6 @ <span class="weight">${roundToPlate(bTop * 0.65)}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${roundToPlate(bTop * 0.65)}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Bench Press<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Top Set'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${bTop}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${bTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${bBoff}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${bBoff}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
@@ -5102,9 +5100,9 @@
             </div>`;
         }
 
-        function agDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function agDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [d1, d2, d3] = sgDescending(e1rms.dead, 8, topRpe, 3);
+            let [d1, d2, d3] = sgDescending(e1rms.dead, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') d1 += 2.5;
             const dDeload = roundToPlate(d1 * 0.65);
             const sets = isDeload ? 2 : 3;
@@ -5114,19 +5112,19 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Deadlift<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${dDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${dDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Deadlift<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 8} @ <span class="weight">${d1}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${d2}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${d3}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
@@ -5145,9 +5143,9 @@
             </div>`;
         }
 
-        function agDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function agDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [o1, o2, o3] = sgDescending(e1rms.ohp, 8, topRpe, 3);
+            let [o1, o2, o3] = sgDescending(e1rms.ohp, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') o1 += 2.5;
             const oDeload = roundToPlate(o1 * 0.65);
             const sets = isDeload ? 2 : 3;
@@ -5157,19 +5155,19 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Strict OHP<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${oDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${oDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Strict OHP<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 8} @ <span class="weight">${o1}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${o1}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${o2}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${o2}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${o3}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${o3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
@@ -5216,15 +5214,15 @@
             </div>`;
         }
 
-        function agDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function agDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe)));
+            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, 8, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
+            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
             const sDeload = roundToPlate(sTop * 0.65);
             const rdlE1rm = e1rms.rdl || (e1rms.dead * 0.80);
-            const rdlW    = roundToPlate(calculateWeight(rdlE1rm, 8, clampRpe(topRpe - 1)));
+            const rdlW    = roundToPlate(calculateWeight(rdlE1rm, tr, clampRpe(topRpe - 1)));
             const sets    = isDeload ? 2 : 3;
 
             return `<div class="day-block">
@@ -5232,24 +5230,24 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Squat<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×6 @ <span class="weight">${sDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${sDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Squat<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${sTop}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×6 @ <span class="weight">${sMid}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${sLow}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
                     <span class="exercise-name secondary">RDL</span>
-                    <span class="exercise-prescription">${sets}×8 @ <span class="weight">${isDeload ? roundToPlate(rdlW * 0.65) : rdlW}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${isDeload ? roundToPlate(rdlW * 0.65) : rdlW}kg</span></span>
                 </div>
                 ${!isDeload ? `
                 <div class="section-divider"></div>
@@ -5286,7 +5284,7 @@
         //  LEG GROWTH FOCUS
         // ════════════════════════════════════════════════════════════════════════
 
-        function buildLegGrowthProgram(e1rms, progressGoal) {
+        function buildLegGrowthProgram(e1rms, progressGoal, tr) {
             const topRPE  = [7, 8, 8.5, 9];
             const badges  = ['RPE 7', 'RPE 8', 'RPE 8.5', 'RPE 9'];
             let html = '';
@@ -5300,7 +5298,7 @@
                             <span class="toggle-arrow">▼</span>
                         </div>
                         <div class="week-content ${w===0?'open':''}">
-                            ${lgWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal)}
+                            ${lgWeekContent(e1rms, topRPE[w], false, isWeek4, progressGoal, tr)}
                         </div>
                     </div>`;
             }
@@ -5312,7 +5310,7 @@
                         <span class="toggle-arrow">▼</span>
                     </div>
                     <div class="week-content">
-                        ${lgWeekContent(e1rms, 6, true, false, progressGoal)}
+                        ${lgWeekContent(e1rms, 6, true, false, progressGoal, tr)}
                     </div>
                 </div>`;
             html += `<div class="info-box">
@@ -5325,18 +5323,18 @@
             return html;
         }
 
-        function lgWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
-            return lgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + lgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + lgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal)
-                 + lgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal);
+        function lgWeekContent(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
+            return lgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + lgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + lgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr)
+                 + lgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr);
         }
 
-        function lgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function lgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let bTop  = roundToPlate(calculateWeight(e1rms.bench, 6, clampRpe(topRpe)));
+            let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
-            const bBoff = roundToPlate(calculateWeight(e1rms.bench, 8, clampRpe(topRpe - 1)));
+            const bBoff = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe - 1)));
             const sets  = isDeload ? 2 : 3;
 
             return `<div class="day-block">
@@ -5344,15 +5342,15 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Bench Press<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×6 @ <span class="weight">${roundToPlate(bTop * 0.65)}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${roundToPlate(bTop * 0.65)}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Bench Press<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Top Set'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${bTop}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${bTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${bBoff}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${bBoff}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 ${!isDeload ? `
@@ -5407,13 +5405,13 @@
             </div>`;
         }
 
-        function lgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function lgDay2(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [d1, d2, d3] = sgDescending(e1rms.dead, 8, topRpe, 3);
+            let [d1, d2, d3] = sgDescending(e1rms.dead, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') d1 += 2.5;
             const dDeload = roundToPlate(d1 * 0.65);
             // Pause Squat: ~80% of squat top weight, 3x4
-            const sqTop    = roundToPlate(calculateWeight(e1rms.squat, 4, clampRpe(topRpe - 1)));
+            const sqTop    = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
             const pauseSqW = roundToPlate(sqTop * 0.80);
             const sets = isDeload ? 2 : 3;
 
@@ -5422,24 +5420,24 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Deficit Deadlift<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${dDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${dDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Deficit Deadlift<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 8} @ <span class="weight">${d1}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${d2}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${d3}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
                     <span class="exercise-name secondary">Pause Squat</span>
-                    <span class="exercise-prescription">${sets}×4 @ <span class="weight">${isDeload ? roundToPlate(pauseSqW * 0.65) : pauseSqW}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${isDeload ? roundToPlate(pauseSqW * 0.65) : pauseSqW}kg</span></span>
                 </div>
                 <div class="section-divider"></div>
                 <div class="exercise-row">
@@ -5461,9 +5459,9 @@
             </div>`;
         }
 
-        function lgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function lgDay3(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let [o1, o2, o3] = sgDescending(e1rms.ohp, 8, topRpe, 3);
+            let [o1, o2, o3] = sgDescending(e1rms.ohp, tr, topRpe, 3);
             if (isWeek4 && !isDeload && progressGoal === 'weight') o1 += 2.5;
             const oDeload = roundToPlate(o1 * 0.65);
             const sets = isDeload ? 2 : 3;
@@ -5473,19 +5471,19 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Strict OHP<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×8 @ <span class="weight">${oDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${oDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Strict OHP<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 8} @ <span class="weight">${o1}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${o1}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${o2}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${o2}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${o3}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${o3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
@@ -5523,15 +5521,15 @@
             </div>`;
         }
 
-        function lgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal) {
+        function lgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe)));
+            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, 6, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, 8, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
+            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
             const sDeload = roundToPlate(sTop * 0.65);
             const rdlE1rm = e1rms.rdl || (e1rms.dead * 0.80);
-            const rdlW    = roundToPlate(calculateWeight(rdlE1rm, 8, clampRpe(topRpe - 1)));
+            const rdlW    = roundToPlate(calculateWeight(rdlE1rm, tr, clampRpe(topRpe - 1)));
             const sets    = isDeload ? 2 : 3;
 
             return `<div class="day-block">
@@ -5539,24 +5537,24 @@
                 ${isDeload
                     ? `<div class="exercise-row">
                         <span class="exercise-name main">Squat<span class="exercise-label">Deload</span></span>
-                        <span class="exercise-prescription">2×6 @ <span class="weight">${sDeload}kg</span></span>
+                        <span class="exercise-prescription">2×${tr} @ <span class="weight">${sDeload}kg</span></span>
                        </div>`
                     : `<div class="exercise-row">
                         <span class="exercise-name main">Squat<span class="exercise-label">${isAmrap ? 'AMRAP' : 'Set 1'} · RPE ${clampRpe(topRpe)}</span></span>
-                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : 6} @ <span class="weight">${sTop}kg</span></span>
+                        <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
-                        <span class="exercise-prescription">1×6 @ <span class="weight">${sMid}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                        </div>
                        <div class="exercise-row">
                         <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
-                        <span class="exercise-prescription">1×8 @ <span class="weight">${sLow}kg</span></span>
+                        <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
                 <div class="exercise-row">
                     <span class="exercise-name secondary">RDL</span>
-                    <span class="exercise-prescription">${sets}×8 @ <span class="weight">${isDeload ? roundToPlate(rdlW * 0.65) : rdlW}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${tr} @ <span class="weight">${isDeload ? roundToPlate(rdlW * 0.65) : rdlW}kg</span></span>
                 </div>
                 ${!isDeload ? `
                 <div class="section-divider"></div>
