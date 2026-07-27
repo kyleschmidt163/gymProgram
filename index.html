@@ -4662,10 +4662,13 @@
 
         // Descending set weights: top at topRpe, set2 at topRpe-1, set3 at topRpe-2
         function sgDescending(e1rm, reps, topRpe, sets) {
-            return Array.from({ length: sets }, (_, i) => {
-                const rpe = clampRpe(topRpe - i);
-                return roundToPlate(calculateWeight(e1rm, reps, rpe));
-            });
+            // Reps are held across sets, so separation must come from LOAD, not RPE.
+            // An RPE-1 step at fixed reps is only ~3% and rounds to the same plate.
+            const top  = roundToPlate(calculateWeight(e1rm, reps, clampRpe(topRpe)));
+            const drop = backoffDrop(reps, topRpe);
+            return Array.from({ length: sets }, (_, i) =>
+                i === 0 ? top
+                        : roundToPlate(top * (1 - Math.min(drop * (1 + (i - 1) * 0.6), 0.22))));
         }
 
         // ── Day 1: Larsen Press focus + chest/back/shoulder accessories ──────────
@@ -4674,7 +4677,7 @@
             let lTop  = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe))) : null;
             if (isWeek4 && !isDeload && progressGoal === 'weight' && lTop) lTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            const lBoff = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe - 1))) : null;
+            const lBoff = lTop ? roundToPlate(lTop * (1 - backoffDrop(tr, topRpe))) : null;
 
             const larsenLabel = e1rms.larsen ? 'Top Set' : 'Top Set — bench −10%';
             const larsenBoffLabel = e1rms.larsen ? 'Back-off' : 'Back-off — bench −10%';
@@ -4689,7 +4692,7 @@
                     <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${lTop}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Larsen Press<span class="exercise-label">${larsenBoffLabel} · RPE ${clampRpe(topRpe - 1)}</span></span>
+                    <span class="exercise-name backoff">Larsen Press<span class="exercise-label">${larsenBoffLabel} · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                     <span class="exercise-prescription">2×${tr} @ <span class="weight">${lBoff}kg</span></span>
                    </div>`;
 
@@ -4768,11 +4771,11 @@
                     <span class="exercise-prescription">1×${isAmrapDead ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                    <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                    <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                    </div>`;
 
@@ -4843,11 +4846,11 @@
                     <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr + '+'} @ <span class="weight">${o1}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                    <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr}+ @ <span class="weight">${o2}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                    <span class="exercise-name backoff">Strict OHP → Push Press<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr}+ @ <span class="weight">${o3}kg</span></span>
                    </div>`;
 
@@ -4908,8 +4911,8 @@
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
+            const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
             const sDeload = roundToPlate(sTop * 0.65);
 
             // RDL: optional — use rdl e1rm or deadlift * 0.7 as fallback
@@ -4926,11 +4929,11 @@
                     <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                    <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                    </div>
                    <div class="exercise-row">
-                    <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                    <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                     <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                    </div>`;
 
@@ -5028,7 +5031,7 @@
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
-            const bBoff = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe - 1)));
+            const bBoff = roundToPlate(bTop * (1 - backoffDrop(tr, topRpe)));
             const sets  = isDeload ? 2 : 3;
             const sSets = isDeload ? 2 : 4;
 
@@ -5044,7 +5047,7 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${bTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">2×${tr} @ <span class="weight">${bBoff}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5119,11 +5122,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Deadlift<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5162,11 +5165,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${o1}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${o2}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${o3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5218,8 +5221,8 @@
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
+            const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
             const sDeload = roundToPlate(sTop * 0.65);
             const rdlE1rm = e1rms.rdl || (e1rms.dead * 0.80);
             const rdlW    = roundToPlate(calculateWeight(rdlE1rm, tr, clampRpe(topRpe - 1)));
@@ -5237,11 +5240,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5334,7 +5337,7 @@
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
-            const bBoff = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe - 1)));
+            const bBoff = roundToPlate(bTop * (1 - backoffDrop(tr, topRpe)));
             const sets  = isDeload ? 2 : 3;
 
             return `<div class="day-block">
@@ -5349,7 +5352,7 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${bTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Bench Press<span class="exercise-label">Back-off · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">2×${tr} @ <span class="weight">${bBoff}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5427,11 +5430,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${d1}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${d2}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Deficit Deadlift<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${d3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5478,11 +5481,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${o1}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${o2}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Strict OHP<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${o3}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
@@ -5525,8 +5528,8 @@
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
-            const sMid  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 1)));
-            const sLow  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe - 2)));
+            const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
+            const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
             const sDeload = roundToPlate(sTop * 0.65);
             const rdlE1rm = e1rms.rdl || (e1rms.dead * 0.80);
             const rdlW    = roundToPlate(calculateWeight(rdlE1rm, tr, clampRpe(topRpe - 1)));
@@ -5544,11 +5547,11 @@
                         <span class="exercise-prescription">1×${isAmrap ? 'AMRAP' : tr} @ <span class="weight">${sTop}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · RPE ${clampRpe(topRpe - 1)}</span></span>
+                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 2 · −${Math.round(backoffDrop(tr, topRpe)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${sMid}kg</span></span>
                        </div>
                        <div class="exercise-row">
-                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · RPE ${clampRpe(topRpe - 2)}</span></span>
+                        <span class="exercise-name backoff">Squat<span class="exercise-label">Set 3 · −${Math.round(Math.min(backoffDrop(tr, topRpe)*1.6,0.22)*100)}%</span></span>
                         <span class="exercise-prescription">1×${tr} @ <span class="weight">${sLow}kg</span></span>
                        </div>`}
                 <div class="section-divider"></div>
