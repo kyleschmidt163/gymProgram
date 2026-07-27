@@ -807,10 +807,6 @@
                 <select id="accessoryFocus" onchange="handleFocusChange()" style="margin-top: 6px;">
                     <option value="beginner_machine">Beginner — Machine Only</option>
                     <option value="beginner_freeweights">Beginner — Free Weights</option>
-                    <option value="arnold_golden6">Arnold — Golden Six (Beginner)</option>
-                    <option value="arnold_volume">Arnold — Volume Split (Advanced)</option>
-                    <option value="hhh_basic">Triple H — Basic (Making the Game)</option>
-                    <option value="hhh_advanced">Triple H — Advanced (Making the Game)</option>
                     <option value="benchmax">Bench Max — 4 Day</option>
                     <option value="arm_growth">Bodybuilding — Arm Growth Focus</option>
                     <option value="leg_growth">Bodybuilding — Leg Growth Focus</option>
@@ -1670,10 +1666,6 @@
         const DUNNO_LIFTS = {
             mass_builder_plus:    ['squat','rdl','glutebridge'],
             beginner_freeweights: ['squat','bench','dead','ohp'],
-            arnold_golden6:       ['squat','bench','ohp'],
-            hhh_basic:            ['bench'],
-            hhh_advanced:         ['bench','ohp'],
-            arnold_volume:        ['squat','bench','ohp']
         };
         function toggleDunno(lift) {
             dunnoState[lift] = !dunnoState[lift];
@@ -2074,18 +2066,6 @@
                 benchmax:         { showDays: false, showRepRange: true,  showProgress: true,  showLifts: true,
                                     hiddenMain: ['ohpBlock'],
                                     visibleSec: ['rowBlock','rdlBlock','larsenBlock'] },
-                arnold_golden6: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: ['deadBlock'],
-                                    visibleSec: [] },
-                hhh_basic: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: ['deadBlock','squatBlock','ohpBlock'],
-                                    visibleSec: [] },
-                hhh_advanced: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: ['deadBlock','squatBlock'],
-                                    visibleSec: [] },
-                arnold_volume: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
-                                    hiddenMain: ['deadBlock'],
-                                    visibleSec: [] },
                 beginner_freeweights: { showDays: false, showRepRange: false, showProgress: false, showLifts: true,
                                     hiddenMain: [],
                                     visibleSec: [] },
@@ -2528,10 +2508,6 @@
             const focus = document.getElementById('accessoryFocus').value;
             const isBeginner    = focus === 'beginner_machine';
             const isBeginnerFW  = focus === 'beginner_freeweights';
-            const isArnoldG6    = focus === 'arnold_golden6';
-            const isArnoldVol   = focus === 'arnold_volume';
-            const isHHHBasic    = focus === 'hhh_basic';
-            const isHHHAdv      = focus === 'hhh_advanced';
             const isBenchMax    = focus === 'benchmax';
             const isCutting     = focus === 'rpe_cutting';
             const isMassBuilder = focus === 'mass_builder';
@@ -2552,10 +2528,6 @@
 
             if (isBeginner)            requiredLifts = [];
             else if (isBeginnerFW)     requiredLifts = [];
-            else if (isArnoldG6)       requiredLifts = [];
-            else if (isArnoldVol)      requiredLifts = [];
-            else if (isHHHBasic)       requiredLifts = [];
-            else if (isHHHAdv)         requiredLifts = [];
             else if (isBenchMax)       requiredLifts = ['bench', 'squat', 'dead'];
             else if (isMassBuilder)    requiredLifts = ['squat'];
             else if (isMassBuilderPlus) requiredLifts = [];
@@ -2613,18 +2585,6 @@
             if (isBeginnerFW) {
                 ['squat','bench','dead','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
             }
-            if (isArnoldG6) {
-                ['squat','bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
-            }
-            if (isHHHBasic) {
-                if (dunnoState.bench) delete e1rms.bench;
-            }
-            if (isHHHAdv) {
-                ['bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
-            }
-            if (isArnoldVol) {
-                ['squat','bench','ohp'].forEach(k => { if (dunnoState[k]) delete e1rms[k]; });
-            }
 
             // Make the "Don't know" toggle load-bearing: for the programs that show
             // it, a blank lift is only treated as by-feel when the user has explicitly
@@ -2650,14 +2610,6 @@
 
             if (isBeginnerFW) {
                 html = buildBeginnerFWProgram(e1rms, dunnoState);
-            } else if (isArnoldG6) {
-                html = buildArnoldGoldenSixProgram(e1rms, dunnoState);
-            } else if (isArnoldVol) {
-                html = buildArnoldVolumeProgram(e1rms);
-            } else if (isHHHBasic) {
-                html = buildHHHBasicProgram(e1rms);
-            } else if (isHHHAdv) {
-                html = buildHHHAdvancedProgram(e1rms);
             } else if (isCutting) {
                 html = buildCuttingProgram(e1rms, days, targetReps);
             } else if (isMassBuilder) {
@@ -3744,404 +3696,6 @@
                  + bfwOhpDay(e1rms, weekIndex, isDeload, isAmrap);
         }
 
-
-        // ════════════════════════════════════════════════════════════════════════
-        //  ARNOLD — GOLDEN SIX  (focus: arnold_golden6)
-        //  Arnold's cited beginner full-body routine, 3x/week, same six lifts each
-        //  session. Sets/reps are the classic prescription (this structure is a
-        //  method, not copyrightable). Loaded from main-lift inputs where the lift
-        //  maps to one (squat, bench, behind-neck press -> OHP input); "Don't know"
-        //  / blank -> by-feel. Behind-neck press kept as-named (swap note in desc).
-        //  No RPE math — beginners just add weight when a set gets easy. 5 "weeks"
-        //  here are presented as progress checkpoints, not load calculations:
-        //  Wk1 base, +2.5kg lower / +1.25kg upper per checkpoint, Wk4 push, Wk5 easy.
-        // ════════════════════════════════════════════════════════════════════════
-        function arnoldLoadedRow(displayName, liftKey, weekIndex, isDeload) {
-            const el = document.getElementById(liftKey + '-weight');
-            const base = el ? parseFloat(el.value) : NaN;
-            const known = !isNaN(base) && !dunnoState[liftKey];
-            const inc = (liftKey === 'squat') ? 2.5 : 1.25;   // squat lower-body, presses upper
-            if (!known) {
-                return `<div class="exercise-row">
-                    <span class="exercise-name main">${displayName}<span class="exercise-label">${isDeload ? 'Easy — lighter' : 'Add weight when a set feels easy'}</span></span>
-                    <span class="exercise-prescription">${isDeload ? '3×8' : '4×10'}</span>
-                </div>`;
-            }
-            let w = isDeload ? Math.max(roundToPlate(base - inc), 20) : roundToPlate(base + inc * weekIndex);
-            return `<div class="exercise-row">
-                <span class="exercise-name main">${displayName}<span class="exercise-label">${isDeload ? 'Deload' : 'Working Sets'}</span></span>
-                <span class="exercise-prescription">${isDeload ? '3×8' : '4×10'} @ <span class="weight">${w}kg</span></span>
-            </div>`;
-        }
-
-        function arnoldGoldenSixDay(e1rms, weekIndex, isDeload) {
-            // Classic order: squat, flat bench, wide-grip chin, behind-neck press,
-            // barbell curl, bench-grip sit-ups. Reps per the traditional routine.
-            return `<div class="day-block">
-                <div class="day-title">Full Body${isDeload ? ' (Deload)' : ''}</div>
-                ${arnoldLoadedRow('Barbell Squat', 'squat', weekIndex, isDeload)}
-                <div class="section-divider"></div>
-                ${arnoldLoadedRow('Flat Barbell Bench Press', 'bench', weekIndex, isDeload)}
-                <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name secondary">Wide-Grip Chin-Up (behind neck)</span><span class="exercise-prescription">${isDeload ? '2' : '3'}×10</span></div>
-                <div class="section-divider"></div>
-                ${arnoldLoadedRow('Behind-the-Neck Press', 'ohp', weekIndex, isDeload)}
-                <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name accessory">Barbell Curl</span><span class="exercise-prescription">${isDeload ? '2' : '3'}×10</span></div>
-                <div class="exercise-row"><span class="exercise-name accessory">Bench-Grip Sit-Ups</span><span class="exercise-prescription">${isDeload ? '2' : '3-4'}×Max</span></div>
-            </div>`;
-        }
-
-        function buildArnoldGoldenSixProgram(e1rms, dunno) {
-            const badges = ['Week 1 — Base', 'Build', 'Build', 'Push'];
-            let html = '';
-            for (let w = 0; w < 4; w++) {
-                html += `
-                    <div class="week-block week-${w + 1}">
-                        <div class="week-header" onclick="toggleWeek(this)">
-                            <span>Week ${w + 1}</span>
-                            <span class="rpe-badge">${badges[w]}</span>
-                            <span class="toggle-arrow">▼</span>
-                        </div>
-                        <div class="week-content ${w === 0 ? 'open' : ''}">
-                            <div class="info-box" style="margin-top:0;margin-bottom:12px;">Run this session <strong>3 times this week</strong> (e.g. Mon / Wed / Fri).</div>
-                            ${arnoldGoldenSixDay(e1rms, w, false)}
-                        </div>
-                    </div>`;
-            }
-            html += `
-                <div class="week-block week-5">
-                    <div class="week-header" onclick="toggleWeek(this)">
-                        <span>Week 5 — Deload</span>
-                        <span class="rpe-badge">Light</span>
-                        <span class="toggle-arrow">▼</span>
-                    </div>
-                    <div class="week-content">
-                        <div class="info-box" style="margin-top:0;margin-bottom:12px;">Run this session <strong>2\u20133 times</strong> this week, easy.</div>
-                        ${arnoldGoldenSixDay(e1rms, 0, true)}
-                    </div>
-                </div>`;
-            html += `<div class="info-box">
-                <strong>Arnold — Golden Six (5 weeks):</strong> The same six-lift full-body session, three times a week. This is the routine Arnold credited as his starting point, and it holds up: heavy compounds, full-body frequency, minimal fluff.
-                <br><br>
-                Compounds that match your inputs (squat, bench, behind-neck press) show loaded weights and climb a little each week; tap <strong>"Don't know"</strong> on any of them for a by-feel prescription instead. Chin-ups, curls and sit-ups are fixed volume — add reps or load as they get easy.
-                <br><br>
-                <strong>On the behind-the-neck movements:</strong> both the press and the wide-grip chin behind the neck are in the original routine, but they put the shoulder in a vulnerable position and aggravate a lot of people. If they bother you, press to the front and do chins to the chest — you lose nothing meaningful.
-                <br><br>
-                <strong>Next:</strong> when the weekly jumps stall, move to Beginner — Free Weights or one of the RPE programs.
-            </div>`;
-            return html;
-        }
-
-        // ════════════════════════════════════════════════════════════════════════
-        //  ARNOLD — VOLUME SPLIT  (focus: arnold_volume)
-        //  Faithful high-volume 6-day split (chest & back paired, shoulders/arms,
-        //  legs). Fixed sets/reps — pure bodybuilding volume, no RPE. The big
-        //  barbell lifts show an optional loaded top set if numbers are entered;
-        //  everything else is "add weight when it's easy". Presented with an honest
-        //  warning that this is a historical, very-high-volume routine.
-        // ════════════════════════════════════════════════════════════════════════
-        // Arnold straight-set primary: one calculated working weight at RPE 8
-        // (these aren't pyramid sets, so no per-set RPE spread). e1rms-based.
-        function arnoldVolTopSet(name, liftKey, sets, reps) {
-            const e1 = (typeof __AV_E1RMS !== 'undefined') ? __AV_E1RMS[liftKey] : undefined;
-            if (!e1 || dunnoState[liftKey]) {
-                return `<div class="exercise-row"><span class="exercise-name main">${name}</span><span class="exercise-prescription">${sets}×${reps}</span></div>`;
-            }
-            const calcReps = 9;            // mid of the 8-10 working range
-            const w = roundToPlate(calculateWeight(e1, calcReps, 8));
-            return `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">RPE 8</span></span><span class="exercise-prescription">${sets}×${reps} @ <span class="weight">${w}kg</span></span></div>`;
-        }
-        let __AV_E1RMS = {};
-        function avRow(name, presc, cls){ cls = cls || 'accessory'; return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">${presc}</span></div>`; }
-        function avDiv(){ return '<div class="section-divider"></div>'; }
-
-        function arnoldVolChestBack(e1rms){
-            return `<div class="day-block">
-                <div class="day-title">Chest & Back</div>
-                ${arnoldVolTopSet('Flat Barbell Bench Press','bench',4,'8-10')}
-                ${avRow('Incline Barbell Bench','4×8-10','secondary')}
-                ${avRow('Dumbbell Flyes','3×10-12')}
-                ${avRow('Weighted Dips','3×10','secondary')}
-                ${avDiv()}
-                ${avRow('Bent-Over Barbell Row','4×8-10','secondary')}
-                ${avRow('Wide-Grip Chin-Up / Pulldown','4×10','secondary')}
-                ${avRow('Close-Grip Cable Row','3×10')}
-                ${avRow('Barbell or T-Bar Pullover','3×12')}
-            </div>`;
-        }
-        function arnoldVolShouldersArms(e1rms){
-            return `<div class="day-block">
-                <div class="day-title">Shoulders & Arms</div>
-                ${arnoldVolTopSet('Overhead / Behind-Neck Press','ohp',4,'8-10')}
-                ${avRow('Lateral Raises','4×10-12','secondary')}
-                ${avRow('Rear-Delt Raises','3×12')}
-                ${avDiv()}
-                ${avRow('Barbell Curl','4×8-10','secondary')}
-                ${avRow('Incline Dumbbell Curl','3×10')}
-                ${avRow('Concentration Curl','3×10')}
-                ${avDiv()}
-                ${avRow('Close-Grip Bench / Lying Tricep Ext.','4×8-10','secondary')}
-                ${avRow('Rope Pressdown','3×12')}
-                ${avRow('Wrist Curls','3×15')}
-            </div>`;
-        }
-        function arnoldVolLegs(e1rms){
-            return `<div class="day-block">
-                <div class="day-title">Legs & Calves</div>
-                ${arnoldVolTopSet('Barbell Squat','squat',5,'8-10')}
-                ${avRow('Leg Press','4×10-12','secondary')}
-                ${avRow('Leg Extension','3×12')}
-                ${avRow('Leg Curl','4×10')}
-                ${avDiv()}
-                ${avRow('Standing Calf Raise','5×15','secondary')}
-                ${avRow('Seated Calf Raise','4×15')}
-                ${avDiv()}
-                ${avRow('Hanging Leg Raise','4×Max')}
-            </div>`;
-        }
-
-        function arnoldVolWeek(e1rms){
-            __AV_E1RMS = e1rms || {};
-            // 6-day: Day 1/4 Chest&Back, 2/5 Shoulders&Arms, 3/6 Legs.
-            const cb = arnoldVolChestBack(e1rms);
-            const sa = arnoldVolShouldersArms(e1rms);
-            const lg = arnoldVolLegs(e1rms);
-            const label = (n,t) => `<div class="info-box" style="margin:14px 0 8px;"><strong>Day ${n}: ${t}</strong></div>`;
-            return label(1,'Chest & Back')+cb + label(2,'Shoulders & Arms')+sa + label(3,'Legs & Calves')+lg
-                 + label(4,'Chest & Back')+cb + label(5,'Shoulders & Arms')+sa + label(6,'Legs & Calves')+lg
-                 + `<div class="info-box" style="margin-top:14px;"><strong>Day 7:</strong> Rest.</div>`;
-        }
-
-
-        // ════════════════════════════════════════════════════════════════════════
-        //  TRIPLE H — BASIC  (focus: hhh_basic)   — from "Making the Game"
-        //  4-day split, Mon/Tue/Thu/Fri. Days 1&3 Chest/Shoulders/Triceps,
-        //  Days 2&4 Back/Biceps/Legs. Heavy/light alternation: each muscle group
-        //  gets a 6-10 day and a 12-15 day. Fixed 2-4 sets per exercise (we show
-        //  the top of that range, 4, with a note). Bench shows a loaded top set
-        //  if a number is entered. Structure only (a method isn't copyrightable);
-        //  all wording original.
-        // ════════════════════════════════════════════════════════════════════════
-        function hhhRow(name, reps, cls){ cls = cls || 'accessory'; return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">2-4×${reps}</span></div>`; }
-        function hhhDiv(){ return '<div class="section-divider"></div>'; }
-        let __HHH_BENCH_E1RM = undefined;
-        // HHH Basic flat bench: one calculated weight per day. Heavy day (6-10)
-        // pegs RPE 8.5; light day (12-15) pegs RPE 7.5. Capped at 8.5.
-        function hhhBenchRow(reps){
-            const e1 = __HHH_BENCH_E1RM;
-            if (!e1 || dunnoState.bench)
-                return `<div class="exercise-row"><span class="exercise-name main">Flat Barbell Bench Press</span><span class="exercise-prescription">2-4×${reps}</span></div>`;
-            const heavy = (reps === '6-10');
-            const rpe = heavy ? 8.5 : 7.5;
-            const calcReps = heavy ? 8 : 12;
-            const w = roundToPlate(calculateWeight(e1, calcReps, rpe));
-            return `<div class="exercise-row"><span class="exercise-name main">Flat Barbell Bench Press<span class="exercise-label">RPE ${rpe}</span></span><span class="exercise-prescription">2-4×${reps} @ <span class="weight">${w}kg</span></span></div>`;
-        }
-
-        // Chest/Shoulders/Triceps day. heavy => 6-10, light => 12-15.
-        function hhhBasicPushDay(dayNum, heavy){
-            const r = heavy ? '6-10' : '12-15';
-            return `<div class="day-block">
-                <div class="day-title">Day ${dayNum}: Chest, Shoulders & Triceps (${heavy ? 'Heavy' : 'Light'})</div>
-                ${hhhRow('Incline Barbell Bench Press', r, 'main')}
-                ${hhhBenchRow(r)}
-                ${hhhRow('Dumbbell Press', r, 'secondary')}
-                ${hhhRow('Lateral Raises or Upright Rows', r)}
-                ${hhhDiv()}
-                ${hhhRow('Triceps Pushdowns', r)}
-                ${hhhRow('Lying Triceps Extension', r)}
-            </div>`;
-        }
-
-        // Back/Biceps/Legs day. heavy => 6-10 (curls/legs), light => 12-15.
-        function hhhBasicPullDay(dayNum, heavy){
-            const r  = heavy ? '6-10' : '12-15';
-            const rp = heavy ? '6-10' : '10-15';   // pulldown/row range per book
-            return `<div class="day-block">
-                <div class="day-title">Day ${dayNum}: Back, Biceps & Legs (${heavy ? 'Heavy' : 'Light'})</div>
-                ${hhhRow('Wide-Grip Lat Pulldown', rp, 'main')}
-                ${hhhRow('Dumbbell Row', rp, 'secondary')}
-                <div class="exercise-row"><span class="exercise-name accessory">Hyperextensions</span><span class="exercise-prescription">1-2×10-15</span></div>
-                ${hhhDiv()}
-                ${hhhRow('Dumbbell Curls', r)}
-                ${hhhRow('Barbell Curls', r)}
-                ${hhhDiv()}
-                ${hhhRow('Leg Extensions', r)}
-                ${hhhRow(heavy ? 'Leg Press' : 'Leg Press', r)}
-                ${hhhRow('Leg Curls', '6-10')}
-                ${hhhRow('Calf Raises', '6-10')}
-            </div>`;
-        }
-
-        function buildHHHBasicProgram(e1rms){
-            __HHH_BENCH_E1RM = (e1rms && e1rms.bench) ? e1rms.bench : undefined;
-            // Day1 push heavy, Day2 pull light, Day4 push light, Day5 pull heavy.
-            const week =
-                hhhBasicPushDay(1, true) +
-                hhhBasicPullDay(2, false) +
-                `<div class="day-block cardio-block"><div class="day-title">Day 3: Rest</div><div class="exercise-row"><span class="exercise-name accessory">Two full days off between cycles — recover, eat, sleep.</span><span class="exercise-prescription"></span></div></div>` +
-                hhhBasicPushDay(4, false) +
-                hhhBasicPullDay(5, true) +
-                `<div class="day-block cardio-block"><div class="day-title">Days 6-7: Rest</div><div class="exercise-row"><span class="exercise-name accessory">Weekend off.</span><span class="exercise-prescription"></span></div></div>`;
-
-            let html = `
-                <div class="week-block week-2">
-                    <div class="week-header open" onclick="toggleWeek(this)">
-                        <span>Weekly Split — repeat each week</span>
-                        <span class="rpe-badge">4 Day · Mon/Tue/Thu/Fri</span>
-                        <span class="toggle-arrow">▼</span>
-                    </div>
-                    <div class="week-content open">${week}</div>
-                </div>`;
-            html += `<div class="info-box">
-                <strong>Triple H — Basic (from "Making the Game"):</strong> A four-day beginner split, ideally Monday / Tuesday / Thursday / Friday so you get two full days off between cycles. Chest, shoulders and triceps on days 1 and 3; back, biceps and legs on days 2 and 4.
-                <br><br>
-                The key idea is the <strong>heavy/light alternation</strong>: each muscle group is trained heavy (6–10 reps) one day that week and lighter (12–15 reps) the other. Every set should be taken close to your limit for that rep range — intensity is the point, not the number of sets. Do <strong>2 to 4 sets</strong> of each exercise; the listing shows that range.
-                <br><br>
-                Enter a bench number and the flat bench shows a rough loaded top set; everything else is by feel — add weight whenever a set stops being hard. Run the same week repeatedly, adding a little weight as you progress.
-            </div>`;
-            return html;
-        }
-
-        // ════════════════════════════════════════════════════════════════════════
-        //  TRIPLE H — ADVANCED  (focus: hhh_advanced)  — from "Making the Game"
-        //  4-day body-part split with a descending-pyramid set scheme: 4 sets per
-        //  exercise = 1 warm-up + light/moderate/heavy working sets to failure
-        //  (rendered as the book's 12-15, 10-12, 6-8). Special schemes preserved
-        //  verbatim (run-the-rack, ¾ deadlift, etc.) with a gloss in the info box.
-        // ════════════════════════════════════════════════════════════════════════
-        const HHH_PYR = '12-15, 10-12, 6-8';
-        function hhhAdvRow(name, sets, scheme, cls){
-            cls = cls || 'accessory';
-            return `<div class="exercise-row"><span class="exercise-name ${cls}">${name}</span><span class="exercise-prescription">${sets}×${scheme}</span></div>`;
-        }
-        let __HHH_ADV_E1RMS = {};
-        // HHH Advanced named primary: warm-up + descending pyramid that matches the
-        // rep scheme — 12-15 @ RPE 7, 10-12 @ RPE 8, 6-8 @ RPE 8.5 (cap 8.5).
-        // If no number / Don't know -> by-feel (just the scheme, no weights).
-        function hhhAdvPrimary(name, liftKey){
-            const e1 = __HHH_ADV_E1RMS[liftKey];
-            if (!e1 || dunnoState[liftKey]) {
-                return `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">warm-up + 3 working sets to failure</span></span><span class="exercise-prescription">4×${HHH_PYR}</span></div>`;
-            }
-            const tiers = [
-                { reps: 12, rpe: 7,   lbl: '12-15' },
-                { reps: 11, rpe: 8,   lbl: '10-12' },
-                { reps: 7,  rpe: 8.5, lbl: '6-8'   }
-            ];
-            let rows = `<div class="exercise-row"><span class="exercise-name main">${name}<span class="exercise-label">Warm-up · form only</span></span><span class="exercise-prescription">1×12-15 — light</span></div>`;
-            tiers.forEach((t, i) => {
-                const w = roundToPlate(calculateWeight(e1, t.reps, t.rpe));
-                const cls = (i === 2) ? 'main' : 'backoff';
-                rows += `<div class="exercise-row"><span class="exercise-name ${cls}">${name}<span class="exercise-label">${t.lbl} · RPE ${t.rpe}</span></span><span class="exercise-prescription">1×${t.lbl} @ <span class="weight">${w}kg</span></span></div>`;
-            });
-            return rows;
-        }
-
-        function hhhAdvShouldersTri(){
-            return `<div class="day-block">
-                <div class="day-title">Day 1: Shoulders & Triceps</div>
-                ${hhhAdvPrimary('Front Military Press', 'ohp')}
-                ${hhhAdvRow('Lateral Raise', 4, HHH_PYR, 'secondary')}
-                ${hhhAdvRow('Front Raise', 4, HHH_PYR)}
-                ${hhhAdvRow('Shrug', 4, HHH_PYR)}
-                ${hhhDiv()}
-                ${hhhAdvRow('Triceps Pushdown', 4, HHH_PYR)}
-                ${hhhAdvRow('Lying Triceps Extension', 4, HHH_PYR)}
-            </div>`;
-        }
-        function hhhAdvLegs(){
-            return `<div class="day-block">
-                <div class="day-title">Day 2: Legs</div>
-                <div class="exercise-row"><span class="exercise-name main">Leg Extension<span class="exercise-label">run-the-rack</span></span><span class="exercise-prescription">5 sets</span></div>
-                <div class="exercise-row"><span class="exercise-name secondary">Leg Press</span><span class="exercise-prescription">4×12-15 (×3)</span></div>
-                <div class="exercise-row"><span class="exercise-name secondary">Hack Squat or Walking Lunge</span><span class="exercise-prescription">4×15-20 (×3)</span></div>
-                ${hhhDiv()}
-                ${hhhAdvRow('Leg Curl', 4, HHH_PYR)}
-                <div class="exercise-row"><span class="exercise-name accessory">Stiff-Legged Deadlift</span><span class="exercise-prescription">4×15-20 (×3)</span></div>
-                ${hhhDiv()}
-                ${hhhAdvRow('Standing Calf Raise', 4, HHH_PYR)}
-                ${hhhAdvRow('Seated Calf Raise', 4, HHH_PYR)}
-            </div>`;
-        }
-        function hhhAdvBack(){
-            return `<div class="day-block">
-                <div class="day-title">Day 3: Back & Rear Delts</div>
-                ${hhhAdvRow('Wide-Grip Pulldown', 4, HHH_PYR, 'main')}
-                ${hhhAdvRow('Bent-Over Row', 4, HHH_PYR, 'secondary')}
-                ${hhhAdvRow('Dumbbell Row', 4, HHH_PYR, 'secondary')}
-                ${hhhAdvRow('Close-Grip Pulldown', 4, HHH_PYR)}
-                <div class="exercise-row"><span class="exercise-name accessory">Hyperextensions</span><span class="exercise-prescription">2×15</span></div>
-                <div class="exercise-row"><span class="exercise-name secondary">¾ Deadlift</span><span class="exercise-prescription">4×${HHH_PYR}</span></div>
-                ${hhhDiv()}
-                ${hhhAdvRow('Rear Delt Fly', 4, HHH_PYR)}
-                ${hhhAdvRow('Bent-Over Dumbbell Raise', 4, HHH_PYR)}
-            </div>`;
-        }
-        function hhhAdvChestBi(){
-            return `<div class="day-block">
-                <div class="day-title">Day 4: Chest & Biceps</div>
-                ${hhhAdvPrimary('Bench Press', 'bench')}
-                ${hhhAdvRow('Incline Press', 4, HHH_PYR, 'secondary')}
-                ${hhhAdvRow('Pec Fly', 4, HHH_PYR)}
-                ${hhhAdvRow('Cable Crossover', 4, HHH_PYR)}
-                ${hhhDiv()}
-                ${hhhAdvRow('Barbell Curl', 4, HHH_PYR, 'secondary')}
-                <div class="exercise-row"><span class="exercise-name accessory">Concentration Curl</span><span class="exercise-prescription">2×10, 12</span></div>
-                <div class="exercise-row"><span class="exercise-name accessory">Preacher Curl</span><span class="exercise-prescription">2×8, 10</span></div>
-                ${hhhAdvRow('Hammer Curl', 4, HHH_PYR)}
-            </div>`;
-        }
-
-        function buildHHHAdvancedProgram(e1rms){
-            __HHH_ADV_E1RMS = e1rms || {};
-            const week = hhhAdvShouldersTri() + hhhAdvLegs() + hhhAdvBack() + hhhAdvChestBi();
-            let html = `
-                <div class="week-block week-4">
-                    <div class="week-header open" onclick="toggleWeek(this)">
-                        <span>Weekly Split — repeat each week</span>
-                        <span class="rpe-badge">4 Day · Body Part</span>
-                        <span class="toggle-arrow">▼</span>
-                    </div>
-                    <div class="week-content open">${week}</div>
-                </div>`;
-            html += `<div class="info-box">
-                <strong>Triple H — Advanced (from "Making the Game"):</strong> A four-day body-part split — Shoulders & Triceps, Legs, Back & Rear Delts, Chest & Biceps. Start each session with ~10 minutes of light cardio to raise core temperature.
-                <br><br>
-                <strong>The set scheme:</strong> 4 sets per exercise. The first is a warm-up done with perfect form. The three working sets are <strong>light → moderate → heavy</strong>, each taken to failure — shown as <strong>${HHH_PYR}</strong> reps (your reps drop as the weight climbs). Move quickly through the first three sets, then rest 2–3 minutes before the heaviest.
-                <br><br>
-                <strong>The odd ones, glossed:</strong> <em>Run-the-rack</em> = on dumbbell/stack work, do a set, immediately drop to a lighter setting and go again, walking the weight down with no rest. <em>(×3)</em> means three working sets at that rep range. <em>¾ Deadlift</em> = pull from just below the knee (blocks or pins) through lockout, not from the floor.
-                <br><br>
-                This is high volume. It assumes the recovery (and, candidly, the chemical assistance) of a full-time pro. If you run it naturally, expect to cut sets back and bail to something leaner the moment your lifts stall.
-            </div>`;
-            return html;
-        }
-
-        function buildArnoldVolumeProgram(e1rms){
-            // Volume routine isn't periodised the way the RPE programs are. Present
-            // it as a single repeating week with a clear health warning, plus the
-            // standard generator week-block shell so export/print still work.
-            let html = `
-                <div class="week-block week-3">
-                    <div class="week-header open" onclick="toggleWeek(this)">
-                        <span>Weekly Split — repeat each week</span>
-                        <span class="rpe-badge">6 Day</span>
-                        <span class="toggle-arrow">▼</span>
-                    </div>
-                    <div class="week-content open">
-                        ${arnoldVolWeek(e1rms)}
-                    </div>
-                </div>`;
-            html += `<div class="info-box" style="border-left-color:var(--danger);">
-                <strong style="color:var(--danger);">Read this first.</strong> This is Arnold's high-volume split reproduced faithfully: six training days, chest and back paired, very high set counts. It is a <strong>historical routine, not a recommended default.</strong> The volume here assumes the recovery capacity (and, candidly, the pharmacological support) Arnold had in his era. For nearly everyone training naturally, this is more volume than you can recover from, and you'll make better, more durable progress on roughly half of it.
-                <br><br>
-                If you run it anyway: keep most sets short of failure, eat and sleep like it's a job, and bail to a lower-volume program the moment your lifts stall or joints complain. Sets/reps are fixed — add weight when a set feels comfortable. The main barbell lifts show a rough loaded top set if you've entered numbers; everything else is by feel.
-                <br><br>
-                Run the 6-day week repeatedly. Take a lighter week every 4\u20136 weeks — drop a set or two off everything and keep the weights honest.
-            </div>`;
-            return html;
-        }
 
         function buildBeginnerFWProgram(e1rms, dunno) {
             const badges = ['Week 1 — Base', '+1 Increment', '+2 Increments', 'AMRAP Test'];
@@ -5975,7 +5529,7 @@
 
         // ---- output banner ----
         const __focusLabels = {
-            beginner_machine:'Beginner · Machine Only', beginner_freeweights:'Beginner · Free Weights', arnold_golden6:'Arnold · Golden Six', arnold_volume:'Arnold · Volume Split', hhh_basic:'Triple H · Basic', hhh_advanced:'Triple H · Advanced', benchmax:'Bench Max · 4 Day',
+            beginner_machine:'Beginner · Machine Only', beginner_freeweights:'Beginner · Free Weights', benchmax:'Bench Max · 4 Day',
             arm_growth:'Arm Growth', leg_growth:'Leg Growth', bodybuilding:'RPE Compound',
             shoulder_growth:'Shoulder Growth', bulgarian_lite:'Bulgarian Lite', mass_builder:'m(ASS) Builder',
             mass_builder_plus:'m(ASS) Builder+',
@@ -5983,10 +5537,6 @@
             rpe_cutting:'RPE Cutting'
         };
         const programDescriptions = {
-            arnold_golden6: 'Arnold\u2019s classic beginner full-body routine, run 3 days a week. Six lifts \u2014 squat, flat barbell bench, wide-grip chin-up, behind-the-neck press, barbell curl and bench-grip sit-ups \u2014 done every session, adding a little weight as you get stronger. A genuinely good first barbell program. Note: the behind-neck press bothers some shoulders; a normal overhead press is a fine swap. Enter your numbers for loaded weights or tap \u201cDon\u2019t know\u201d for by-feel.',
-            hhh_basic: 'Triple H\u2019s beginner split from \u201cMaking the Game.\u201d Four days (ideally Mon/Tue/Thu/Fri): chest, shoulders & triceps on days 1 and 3, back, biceps & legs on days 2 and 4. The trick is the heavy/light alternation \u2014 each muscle group gets a heavy 6\u201310 day and a lighter 12\u201315 day each week. Fixed sets/reps; train each set near-maximal. Bench shows a loaded top set if you enter a number.',
-            hhh_advanced: 'Triple H\u2019s advanced split from \u201cMaking the Game\u201d \u2014 a 4-day body-part routine (Shoulders & Triceps / Legs / Back & Rear Delts / Chest & Biceps). Each exercise is 4 sets run as a descending pyramid: a warm-up, then light, moderate and heavy working sets (12-15, 10-12, 6-8) each taken to failure. High volume; built for experienced lifters who recover well. Fixed scheme, no calculated weights.',
-            arnold_volume: 'Arnold\u2019s high-volume bodybuilding split \u2014 6 days, chest & back paired, very high set counts. This is a historical routine, not a recommended default: it assumes a level of recovery (and pharmacology) most lifters don\u2019t have, and the vast majority make better progress on far less volume. Included faithfully for those who want to run it with eyes open. Fixed sets/reps; add weight when a set feels easy.',
             beginner_freeweights: 'Barbell training for newcomers built on the four main lifts \u2014 squat, bench, deadlift and overhead press, one per day across 4 days. You add a little weight each week (2.5kg on squat/deadlift, 1.25kg on bench/OHP), with simple free-weight accessories after the main lift. Week 4 is an AMRAP test week; Week 5 is a deload. Don\u2019t know a lift? Tap \u201cDon\u2019t know\u201d and it\u2019s prescribed by feel instead.',
             beginner_machine: 'Machine-only full-body training for newcomers. Push/Pull and Legs/Core across 4 days, with RPE rising over the block, an AMRAP test week, then a deload — built around safe form and steady progression.',
             benchmax: 'A bench-specialisation block built to push your bench press, with supporting pressing and back volume around it. 4 days a week.',
