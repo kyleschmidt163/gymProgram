@@ -794,7 +794,7 @@
         <header>
             <div class="mast-meta"><span class="tick">///</span><span>Strength Programming</span></div>
             <h1>Program<span class="ghost">Generator</span></h1>
-            <p class="header-tag"><span>Direct all questions to <a href="https://instagram.com/kyleschmidt__" target="_blank">kyleschmidt__ @ instagram</a></span><span class="ver">v2.0</span></p>
+            <p class="header-tag"><span>Direct all questions to <a href="https://instagram.com/kyleschmidt__" target="_blank">kyleschmidt__ @ instagram</a></span><span class="ver">v1.95</span></p>
         </header>
 
 
@@ -818,10 +818,67 @@
                     <option value="peaking_block">Peaking Block — 4 Week Meet Prep</option>
                     <option value="advanced_rpe">Powerlifting — Advanced RPE 4 Day</option>
                     <option value="powerlifting">Powerlifting — Sub Max RPE</option>
+                    <option value="return_to_training">Return to Training — Post-Op Hernia Repair</option>
                     <option value="rpe_cutting">RPE Cutting Program — Maintenance</option>
                 </select>
             </div>
             <div id="programDesc" class="program-desc"></div>
+        </div>
+
+        <!-- ── Return to Training setup ── -->
+        <div class="setup-panel" id="rtpPanel" style="display:none;">
+            <h2 class="section-title">Return to Training Setup</h2>
+            <p style="color:var(--text-muted);font-size:0.75rem;margin-bottom:15px;">
+                Ceilings are numbers to reach and hold, not to exceed. Loads are a percentage of these, never of a current max.
+            </p>
+            <div class="options-row" style="margin-top:0;padding-top:0;border-top:none;">
+                <div class="input-group">
+                    <label>Week 1 start date</label>
+                    <input type="date" id="rtpStart" value="2026-07-27">
+                </div>
+                <div class="input-group">
+                    <label>Scar revision date (pause week)</label>
+                    <input type="date" id="rtpScar" value="2026-08-13">
+                </div>
+                <div class="input-group">
+                    <label>Deadlift unlock date</label>
+                    <input type="date" id="rtpGate" value="2026-10-01">
+                </div>
+            </div>
+            <div class="options-row">
+                <div class="input-group">
+                    <label>Deadlift ceiling (kg × 8)</label>
+                    <input type="number" inputmode="decimal" id="rtpCeilDead" value="180" step="2.5">
+                </div>
+                <div class="input-group">
+                    <label>Bench ceiling (kg × 8)</label>
+                    <input type="number" inputmode="decimal" id="rtpCeilBench" value="120" step="2.5">
+                </div>
+                <div class="input-group">
+                    <label>Squat ceiling (kg × 8)</label>
+                    <input type="number" inputmode="decimal" id="rtpCeilSquat" value="140" step="2.5">
+                </div>
+            <div class="options-row">
+                <div class="input-group">
+                    <label>Arm &amp; Delt Volume</label>
+                    <select id="rtpArmVolume">
+                        <option value="standard">Standard</option>
+                        <option value="high" selected>High</option>
+                        <option value="apeshit">Apeshit</option>
+                    </select>
+                </div>
+            </div>
+            </div>
+            <div class="options-row">
+                <div class="input-group">
+                    <label>Arm &amp; Delt Volume</label>
+                    <select id="rtpArmVolume">
+                        <option value="standard">Standard</option>
+                        <option value="high" selected>High</option>
+                        <option value="apeshit">Apeshit</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- ── Program Options ── -->
@@ -2072,6 +2129,9 @@
                 beginner_machine: { showDays: false, showRepRange: false, showProgress: false, showLifts: false,
                                     hiddenMain: [],
                                     visibleSec: [] },
+                return_to_training: { showDays: false, showRepRange: false, showProgress: false, showLifts: false,
+                                    hiddenMain: [],
+                                    visibleSec: [] },
                 rpe_cutting:      { showDays: true,  showRepRange: true , showProgress: false, showLifts: true,
                                     hiddenMain: [],
                                     visibleSec: [] },
@@ -2116,6 +2176,9 @@
 
             // Show options panel only if at least one field is visible
             optionsPanel.style.display = (r.showDays || r.showRepRange || r.showProgress) ? 'block' : 'none';
+
+            const rtpPanel = document.getElementById('rtpPanel');
+            if (rtpPanel) rtpPanel.style.display = (focus === 'return_to_training') ? 'block' : 'none';
 
             // ── Secondary lift block visibility ──
             const allSecondary = ['rowBlock','frontsquatBlock','rdlBlock','larsenBlock'];
@@ -2517,6 +2580,7 @@
             const isShoulderGrowth = focus === 'shoulder_growth';
             const isArmGrowth   = focus === 'arm_growth';
             const isLegGrowth   = focus === 'leg_growth';
+            const isReturnToTraining = focus === 'return_to_training';
             const isAdvancedRPE = focus === 'advanced_rpe';
 
             const e1rms = {};
@@ -2528,6 +2592,7 @@
 
             if (isBeginner)            requiredLifts = [];
             else if (isBeginnerFW)     requiredLifts = [];
+            else if (isReturnToTraining) requiredLifts = [];
             else if (isBenchMax)       requiredLifts = ['bench', 'squat', 'dead'];
             else if (isMassBuilder)    requiredLifts = ['squat'];
             else if (isMassBuilderPlus) requiredLifts = [];
@@ -2627,6 +2692,8 @@
                 html = buildArmGrowthProgram(e1rms, progressGoal, targetReps);
             } else if (isLegGrowth) {
                 html = buildLegGrowthProgram(e1rms, progressGoal, targetReps);
+            } else if (isReturnToTraining) {
+                html = buildReturnToTrainingProgram();
             } else if (isAdvancedRPE) {
                 html = buildAdvancedRPEProgram(e1rms, targetReps, progressGoal);
             } else {
@@ -3696,6 +3763,376 @@
                  + bfwOhpDay(e1rms, weekIndex, isDeload, isAmrap);
         }
 
+
+        // ════════════════════════════════════════════════════════════════════════
+        //  RETURN TO TRAINING · POST-OP HERNIA REPAIR  (focus: return_to_training)
+        //
+        //  Governing principle: risk to the repair is driven by intra-abdominal
+        //  pressure (bracing / Valsalva), NOT raw load. Mesh gives immediate
+        //  mechanical strength; the sutured fascia is the slow timeline. So the
+        //  variable that progresses slowest here is BRACING, not weight.
+        //
+        //  Loads derive from CEILING targets (a number to reach and hold, never
+        //  exceed), never from a detrained e1RM. A stale e1RM after 3+ months off
+        //  would produce a number that means nothing.
+        //
+        //  Deadlift is hard-gated to a calendar date, not a week number, because
+        //  it is the highest-IAP lift and the one worth being unreasonable about.
+        // ════════════════════════════════════════════════════════════════════════
+
+        const RTP_PHASES = [
+            { n: 'Load Reintroduction',      cls: 'week-1', wk: [1, 2],
+              brace: 'Breathe through every rep. Zero bracing. Nothing within 5 reps of failure.' },
+            { n: 'Light Free Weights',       cls: 'week-2', wk: [3, 4, 5, 6],
+              brace: 'Still breathing through every rep. Exhale on the effort. No breath holding.' },
+            { n: 'Progressive Loading',      cls: 'week-3', wk: [7, 8, 9, 10, 11],
+              brace: 'Soft brace allowed. Exhale through the sticking point. No maximal Valsalva.' },
+            { n: 'Deadlift Reintroduction',  cls: 'week-4', wk: [12, 13, 14, 15, 16, 17, 18],
+              brace: 'Brace scales with load. Hard lock-in Valsalva only on top sets, final weeks only. Belt is the very last thing added.' }
+        ];
+
+        // % of the 8-rep ceiling, by week number.
+        const RTP_PCT = {
+            bench: { 3:.40, 4:.45, 5:.50, 6:.53, 7:.57, 8:.61, 9:.65, 10:.68, 11:.72,
+                     12:.75, 13:.78, 14:.81, 15:.84, 16:.87, 17:.90, 18:.92 },
+            squat: { 3:.38, 4:.42, 5:.47, 6:.50, 7:.54, 8:.58, 9:.62, 10:.65, 11:.69,
+                     12:.72, 13:.75, 14:.78, 15:.81, 16:.84, 17:.87, 18:.90 },
+            dead:  { 12:.50, 13:.55, 14:.60, 15:.65, 16:.70, 17:.75, 18:.80 }
+        };
+
+        function rtpPhaseFor(week) {
+            return RTP_PHASES.find(p => p.wk.includes(week)) || RTP_PHASES[RTP_PHASES.length - 1];
+        }
+
+        function rtpLoad(ceiling, week, lift) {
+            const pct = RTP_PCT[lift][week];
+            if (!ceiling || !pct) return null;
+            return roundToPlate(ceiling * pct);
+        }
+
+        // Week i covers [start + 7i, start + 7i + 6].
+        function rtpWeekStart(startISO, week) {
+            const d = new Date(startISO + 'T00:00:00');
+            if (isNaN(d)) return null;
+            d.setDate(d.getDate() + (week - 1) * 7);
+            return d;
+        }
+
+        function rtpFmt(d) {
+            if (!d) return '';
+            return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+        }
+
+        function rtpWeekHasDate(startISO, week, targetISO) {
+            const ws = rtpWeekStart(startISO, week);
+            if (!ws || !targetISO) return false;
+            const t = new Date(targetISO + 'T00:00:00');
+            if (isNaN(t)) return false;
+            const we = new Date(ws); we.setDate(we.getDate() + 6);
+            return t >= ws && t <= we;
+        }
+
+        // Deadlift is gated on a real date, not a week index.
+        function rtpDeadliftOpen(startISO, week, gateISO) {
+            const ws = rtpWeekStart(startISO, week);
+            if (!ws || !gateISO) return false;
+            return ws >= new Date(gateISO + 'T00:00:00');
+        }
+
+        function rtpRow(name, prescription, cls, label) {
+            cls = cls || 'accessory';
+            const lab = label ? `<span class="exercise-label">${label}</span>` : '';
+            return `<div class="exercise-row">
+                <span class="exercise-name ${cls}">${name}${lab}</span>
+                <span class="exercise-prescription">${prescription}</span>
+            </div>`;
+        }
+
+        function rtpDiv() { return '<div class="section-divider"></div>'; }
+
+        // ── Phase 1: machines only ──────────────────────────────────────────────
+        function rtpP1Day(dayNum, title, rows) {
+            return `<div class="day-block">
+                <div class="day-title">Day ${dayNum}: ${title}</div>
+                ${rows}
+            </div>`;
+        }
+
+        // ── Arm / delt / calf specialisation ────────────────────────────────────
+        //  These are the muscles that carry stage presence AND generate essentially
+        //  no intra-abdominal pressure, so they are the one thing that can be
+        //  hammered while the trunk-demanding work crawls. Volume here runs INVERSE
+        //  to compound loading: highest in phase 3 when the big lifts are still
+        //  capped, tapering slightly in phase 4 as the deadlift takes recovery back.
+        //
+        //  Important: "arms" is not automatically low-IAP. Weighted dips, heavy
+        //  cheat curls, standing overhead extensions and hanging chin-ups all
+        //  require a hard brace. Weeks 1-6 are seated or supported ONLY. Standing
+        //  free-weight arm work arrives in phase 3, dips and chins in phase 4.
+
+        function rtpVolMult() {
+            const el = document.getElementById('rtpArmVolume');
+            const v = el ? el.value : 'high';
+            return v === 'standard' ? 0.7 : (v === 'apeshit' ? 1.3 : 1.0);
+        }
+
+        function rtpPhaseMult(week) {
+            if (week <= 2) return 0.75;   // 3.5 months detrained, ease in even here
+            if (week <= 6) return 1.0;
+            if (week <= 11) return 1.15;  // peak: compounds still capped, budget is free
+            return 1.0;                   // deadlift returns, give recovery back
+        }
+
+        function rtpSets(base, week) {
+            return Math.max(2, Math.round(base * rtpVolMult() * rtpPhaseMult(week)));
+        }
+
+        // day: 1 lower, 2 push, 3 pull, 4 posterior
+        function rtpArms(week, day) {
+            const S = (b) => rtpSets(b, week);
+            const P3 = week >= 7, P4 = week >= 12;
+            const seated = !P3;   // weeks 1-6: supported only
+            let html = rtpDiv();
+
+            if (day === 1) {
+                html += rtpRow('Seated Calf Raise', `${S(4)}×15-20`, 'accessory', '')
+                      + rtpRow('Standing Calf Raise', `${S(4)}×12-15`, 'accessory', '')
+                      + rtpDiv()
+                      + rtpRow('Cable Curl', `${S(3)}×12-15`, 'accessory', '')
+                      + rtpRow('Rope Pushdown', `${S(3)}×12-15`, 'accessory', '');
+            }
+
+            if (day === 2) {
+                html += rtpRow(seated ? 'Seated DB Lateral Raise' : 'Cable Lateral Raise',
+                               `${S(4)}×15-20`, 'secondary', 'shoulder is tweaked, light and strict')
+                      + rtpRow('Machine Lateral Raise', `${S(3)}×12-15`, 'accessory', '')
+                      + rtpDiv()
+                      + rtpRow('Rope Pushdown', `${S(4)}×12-15`, 'secondary', '')
+                      + rtpRow(seated ? 'Seated Cable Overhead Extension' : 'Overhead Rope Extension',
+                               `${S(3)}×12-15`, 'accessory', seated ? 'seated, back supported' : '')
+                      + rtpRow('Single-Arm Pushdown', `${S(2)}×15`, 'accessory', 'stretch and squeeze');
+                if (P4) html += rtpRow('Weighted Dips', `${S(2)}×8-10`, 'accessory', 'braces hard, phase 4 only');
+            }
+
+            if (day === 3) {
+                html += rtpRow('Rear Delt Machine', `${S(4)}×15-20`, 'secondary', '')
+                      + rtpRow('Face Pull', `${S(3)}×15-20`, 'accessory', '')
+                      + rtpDiv()
+                      + rtpRow(seated ? 'Machine Preacher Curl' : 'EZ-Bar Preacher Curl',
+                               `${S(4)}×10-12`, 'secondary', '')
+                      + rtpRow('Incline DB Curl', `${S(3)}×12-15`, 'accessory', 'full stretch')
+                      + rtpRow('Cable Rope Hammer Curl', `${S(3)}×12-15`, 'accessory', '');
+            }
+
+            if (day === 4) {
+                html += rtpRow('Seated Calf Raise', `${S(4)}×15-20`, 'accessory', '')
+                      + rtpDiv()
+                      + rtpRow(seated ? 'Machine Preacher Curl' : 'Standing EZ-Bar Curl',
+                               `${S(4)}×10-12`, 'secondary', seated ? '' : 'strict, no swing or trunk drive')
+                      + rtpRow('Cable Curl', `${S(3)}×15`, 'accessory', 'drop the last set')
+                      + rtpDiv()
+                      + rtpRow(seated ? 'Cable Skullcrusher' : 'EZ-Bar Skullcrusher',
+                               `${S(4)}×10-12`, 'secondary', '')
+                      + rtpRow('Rope Pushdown', `${S(3)}×15`, 'accessory', 'drop the last set')
+                      + rtpDiv()
+                      + rtpRow('Cable Lateral Raise', `${S(3)}×15-20`, 'accessory', '');
+            }
+
+            return html;
+        }
+
+        function rtpPhase1Week() {
+            const cue = 'breathe through every rep';
+            const p = '3×12-15';
+            return rtpP1Day(1, 'Lower · Machines',
+                    rtpRow('Leg Press', p, 'main', cue)
+                  + rtpRow('Leg Extension', p, 'secondary', cue)
+                  + rtpRow('Seated Leg Curl', p, 'secondary', cue)
+                  + rtpArms(1, 1))
+                 + rtpP1Day(2, 'Push · Machines + Arms',
+                    rtpRow('Machine Chest Press', p, 'main', cue)
+                  + rtpRow('Machine Shoulder Press', '2×12-15', 'secondary', 'shoulder is tweaked, stop early')
+                  + rtpRow('Pec Deck', '2×15', 'accessory', cue)
+                  + rtpArms(1, 2))
+                 + rtpP1Day(3, 'Pull · Machines + Arms',
+                    rtpRow('Lat Pulldown', p, 'main', cue)
+                  + rtpRow('Seated Cable Row', p, 'secondary', cue)
+                  + rtpArms(1, 3))
+                 + rtpP1Day(4, 'Lower + Arm Specialisation',
+                    rtpRow('Leg Press', p, 'main', cue)
+                  + rtpRow('Lying Leg Curl', p, 'secondary', cue)
+                  + rtpRow('Hip Abduction', '2×15', 'accessory', cue)
+                  + rtpArms(1, 4));
+        }
+
+        function rtpLoadedWeek(week, ceil, phase, dlOpen, gateStr) {
+            const bw = rtpLoad(ceil.bench, week, 'bench');
+            const sw = rtpLoad(ceil.squat, week, 'squat');
+            const dw = rtpLoad(ceil.dead,  week, 'dead');
+            const reps = week <= 6 ? 12 : (week <= 11 ? 10 : 8);
+            const w = (kg) => kg ? ` @ <span class="weight">${kg}kg</span>` : '';
+            const cue = week <= 6 ? 'breathe through every rep' : (week <= 11 ? 'soft brace, exhale on effort' : 'brace scales with load');
+            const P3 = week >= 7, P4 = week >= 12;
+            const byFeel = 'load you could do for 20+, stop at ' + reps;
+
+            // Day 1: lower, quad bias
+            let d1 = rtpRow(P3 ? 'Back Squat' : 'Goblet Squat / Leg Press', `3×${reps}${P3 ? w(sw) : ''}`, 'main', P3 ? cue : byFeel)
+                   + rtpRow('DB Split Squat', `3×${reps}`, 'secondary', P3 ? cue : byFeel)
+                   + rtpRow('Seated Leg Curl', `3×${reps + 2}`, 'accessory', '')
+                   + rtpArms(week, 1);
+
+            // Day 2: push
+            let d2 = rtpRow(P3 ? 'Barbell Bench Press' : 'DB Bench Press', `3×${reps}${P3 ? w(bw) : ''}`, 'main', P3 ? cue : byFeel)
+                   + rtpRow('Incline DB Press', `3×${reps}`, 'secondary', 'upper chest, shows in a shirt')
+                   + rtpRow('Neutral-Grip DB Shoulder Press', `2×${reps}`, 'secondary', 'shoulder-friendly, ease in')
+                   + rtpRow('Cable Fly', '3×15', 'accessory', '')
+                   + rtpArms(week, 2);
+
+            // Day 3: pull
+            let d3 = rtpRow('Lat Pulldown', `3×${reps + 2}`, 'main', 'wide, chase the taper')
+                   + rtpRow(P3 ? 'Barbell Row' : 'Chest-Supported Row', `3×${reps}`, 'secondary', P3 ? cue : byFeel)
+                   + rtpRow('Seated Cable Row', `3×${reps}`, 'secondary', '')
+                   + rtpArms(week, 3);
+
+            // Day 4: posterior + arms, and the deadlift slot
+            let d4 = '';
+            if (P4) {
+                if (dlOpen) {
+                    const belt = week >= 17 ? 'belt allowed on top set' : 'no belt';
+                    const val  = week >= 17 ? 'short Valsalva permitted on top set' : 'no lock-in Valsalva';
+                    d4 += rtpRow('Deadlift', `4×${reps}${w(dw)}`, 'main', `${val} · ${belt}`) + rtpDiv();
+                } else {
+                    d4 += rtpRow('Deadlift', `<span style="color:var(--danger);">locked until ${gateStr}</span>`, 'main', 'highest-IAP lift, date-gated')
+                        + rtpRow('Substitute: Hip Thrust', `3×${reps}`, 'secondary', 'loads hips, spares the midline')
+                        + rtpDiv();
+                }
+            }
+            d4 += rtpRow(P3 ? 'Romanian Deadlift' : 'DB Romanian Deadlift', `3×${reps}`, P4 ? 'secondary' : 'main', P3 ? cue : byFeel)
+                + rtpRow('Leg Press', `3×${reps + 2}`, 'secondary', '')
+                + rtpArms(week, 4);
+
+            return rtpP1Day(1, P3 ? 'Lower · Quad Bias' : 'Lower · Light Free Weights', d1)
+                 + rtpP1Day(2, 'Push + Delts & Triceps', d2)
+                 + rtpP1Day(3, 'Pull + Rear Delts & Biceps', d3)
+                 + rtpP1Day(4, P4 ? 'Posterior · Deadlift Day + Arms' : 'Posterior + Arm Specialisation', d4);
+        }
+
+        function rtpPauseWeek(dateStr) {
+            return `<div class="day-block">
+                <div class="day-title" style="color:var(--danger);">Procedure week · ${dateStr}</div>
+                ${rtpRow('Full pause from training', 'no loaded work', 'main', 'fresh abdominal wound')}
+                ${rtpDiv()}
+                ${rtpRow('Walking', 'easy, daily', 'secondary', '')}
+                ${rtpRow('Resume at the previous phase, one step back', 'next week', 'accessory', 'do not resume at the load you left on')}
+            </div>`;
+        }
+
+        // The week after a fresh abdominal wound does not resume where you left off.
+        function rtpReentryWeek(reps) {
+            return `<div class="day-block">
+                <div class="day-title" style="color:var(--danger);">Re-entry week · one step back</div>
+                ${rtpRow('Machines only again, this week', '3×12-15', 'main', 'breathe through every rep, zero bracing')}
+                ${rtpRow('Leg Press · Lat Pulldown · Seated Row · Machine Press', '3×12-15 each', 'secondary', 'nothing near failure')}
+                ${rtpDiv()}
+                ${rtpRow('No free weights, no hinging, no direct ab work', 'this week only', 'accessory', 'fresh wound')}
+                ${rtpDiv()}
+                ${rtpRow('Seated Cable Curl', '3×15', 'secondary', 'seated arm work is fine, near-zero pressure')}
+                ${rtpRow('Rope Pushdown', '3×15', 'secondary', 'stay seated or braced against the stack')}
+                ${rtpRow('Seated DB Lateral Raise', '3×15-20', 'accessory', 'light')}
+                ${rtpRow('Seated Calf Raise', '3×15-20', 'accessory', '')}
+                ${rtpDiv()}
+                ${rtpRow('Resume the normal ramp next week', '', 'accessory', 'at the load you were on before the pause, not above')}
+            </div>`;
+        }
+
+        function buildReturnToTrainingProgram() {
+            const g = (id) => { const e = document.getElementById(id); return e ? e.value : ''; };
+            const startISO = g('rtpStart');
+            const scarISO  = g('rtpScar');
+            const gateISO  = g('rtpGate');
+            const ceil = {
+                dead:  parseFloat(g('rtpCeilDead'))  || 180,
+                bench: parseFloat(g('rtpCeilBench')) || 120,
+                squat: parseFloat(g('rtpCeilSquat')) || 140
+            };
+            const gateStr = gateISO ? rtpFmt(new Date(gateISO + 'T00:00:00')) : 'October';
+
+            let html = `<div class="info-box" style="border-left-color:var(--danger);">
+                <strong style="color:var(--danger);">Stop and check.</strong> Mild general abdominal soreness after a session is expected and fine.
+                Stop and get it looked at for any of: sharp or localised pain at the repair site, pain that climbs and stays,
+                or any visible bulge. These are not "push through" signals.
+                <br><br>
+                <strong>The load is not the risk. The bracing is.</strong> Every phase below progresses breathing before it progresses weight.
+                If a set requires you to hold your breath and brace hard, it is too heavy for that phase regardless of what the number says.
+            </div>`;
+
+            for (let wk = 1; wk <= 18; wk++) {
+                const phase = rtpPhaseFor(wk);
+                const ws = rtpWeekStart(startISO, wk);
+                const dateStr = ws ? ` · ${rtpFmt(ws)}` : '';
+                const isPause = rtpWeekHasDate(startISO, wk, scarISO);
+                const isReentry = !isPause && wk > 1 && rtpWeekHasDate(startISO, wk - 1, scarISO);
+                const dlOpen = rtpDeadliftOpen(startISO, wk, gateISO);
+
+                let content;
+                let badge;
+                if (isPause) {
+                    content = rtpPauseWeek(rtpFmt(new Date(scarISO + 'T00:00:00')));
+                    badge = 'Procedure · pause';
+                } else if (isReentry) {
+                    content = rtpReentryWeek();
+                    badge = 'Re-entry · one step back';
+                } else if (wk <= 2) {
+                    content = rtpPhase1Week();
+                    badge = 'Machines only';
+                } else {
+                    content = rtpLoadedWeek(wk, ceil, phase, dlOpen, gateStr);
+                    badge = phase.n;
+                }
+
+                html += `
+                    <div class="week-block ${(isPause || isReentry) ? 'week-5' : phase.cls}">
+                        <div class="week-header" onclick="toggleWeek(this)">
+                            <span>Week ${wk}${dateStr}</span>
+                            <span class="rpe-badge">${badge}</span>
+                            <span class="toggle-arrow">▼</span>
+                        </div>
+                        <div class="week-content ${wk === 1 ? 'open' : ''}">
+                            ${(!isPause && !isReentry) ? `<div class="info-box" style="margin-top:0;margin-bottom:16px;">
+                                <strong>${phase.n} · breathing</strong><br>${phase.brace}
+                            </div>` : ''}
+                            ${content}
+                        </div>
+                    </div>`;
+            }
+
+            html += `<div class="info-box">
+                <strong>How this is built.</strong> Loads are a percentage of the ceilings you set, not of a current 1RM.
+                After time off, an estimated max is a fiction; a ceiling you intend to reach and hold is a real number.
+                Bench and squat start at roughly 40% of ceiling and climb to about 90% by week 18. That is deliberately slower than
+                your strength will come back, because the limiter is fascial remodelling, not muscle.
+                <br><br>
+                <strong>Deadlift.</strong> Gated on a calendar date, not a week number. It stays locked and shows a hip thrust in its place until
+                ${gateStr}. When it opens it starts near 50% of ceiling with no belt and no lock-in Valsalva, and the hard brace is the
+                last variable added, not the first. Given you pull with a heavy lock-in, that breath is the actual exposure, so it gets
+                introduced after the load is already familiar.
+                <br><br>
+                <strong>Arms, delts and calves.</strong> These run inverse to everything else: volume is highest in weeks 7 to 11,
+                exactly when the compounds are still capped, then eases back in phase 4 as the deadlift starts taking recovery again.
+                That is not a consolation prize. Cable and machine arm work generates almost no intra-abdominal pressure, and with the
+                big lifts held back there is nothing competing for recovery, so this is the one window where hammering arms is
+                genuinely the optimal use of the time rather than a trade-off.
+                <br><br>
+                <strong>What is NOT low-pressure.</strong> Weighted dips, heavy cheat curls, standing overhead extensions and hanging
+                chin-ups all need a hard brace, so "it's only arms" does not make them safe. Weeks 1 to 6 are seated or supported only,
+                standing free-weight arm work arrives in week 7, and dips wait until phase 4.
+                <br><br>
+                <strong>Ceilings.</strong> Reach them and hold. Remodelling continues out to 6 to 12 months, and the midline has already
+                failed under load once, so treating these as a ceiling rather than a checkpoint is the whole point.
+            </div>`;
+
+            return html;
+        }
 
         function buildBeginnerFWProgram(e1rms, dunno) {
             const badges = ['Week 1 — Base', '+1 Increment', '+2 Increments', 'AMRAP Test'];
@@ -5529,7 +5966,7 @@
 
         // ---- output banner ----
         const __focusLabels = {
-            beginner_machine:'Beginner · Machine Only', beginner_freeweights:'Beginner · Free Weights', benchmax:'Bench Max · 4 Day',
+            return_to_training:'Return to Training · Post-Op', beginner_machine:'Beginner · Machine Only', beginner_freeweights:'Beginner · Free Weights', benchmax:'Bench Max · 4 Day',
             arm_growth:'Arm Growth', leg_growth:'Leg Growth', bodybuilding:'RPE Compound',
             shoulder_growth:'Shoulder Growth', bulgarian_lite:'Bulgarian Lite', mass_builder:'m(ASS) Builder',
             mass_builder_plus:'m(ASS) Builder+',
@@ -5537,6 +5974,7 @@
             rpe_cutting:'RPE Cutting'
         };
         const programDescriptions = {
+            return_to_training: 'Structured return after robotic revision hernia repair with retromuscular mesh. The ramp is governed by intra-abdominal pressure rather than load: mesh gives immediate mechanical strength, but sutured fascia gains meaningful strength around 6 weeks, is largely healed by 3 months and keeps remodelling out to 6-12 months, so bracing is the variable that progresses slowest. Weeks 1-2 are fixed-path machines at genuinely trivial loads. Weeks 3-6 add light free weights you can breathe through. Weeks 7-11 progress load with a soft brace. Weeks 12-18 reintroduce the deadlift, but only after a calendar date you set, with the hard lock-in Valsalva and the belt added last. Loads are percentages of ceiling targets you enter, not of a detrained max.',
             beginner_freeweights: 'Barbell training for newcomers built on the four main lifts \u2014 squat, bench, deadlift and overhead press, one per day across 4 days. You add a little weight each week (2.5kg on squat/deadlift, 1.25kg on bench/OHP), with simple free-weight accessories after the main lift. Week 4 is an AMRAP test week; Week 5 is a deload. Don\u2019t know a lift? Tap \u201cDon\u2019t know\u201d and it\u2019s prescribed by feel instead.',
             beginner_machine: 'Machine-only full-body training for newcomers. Push/Pull and Legs/Core across 4 days, with RPE rising over the block, an AMRAP test week, then a deload — built around safe form and steady progression.',
             benchmax: 'A bench-specialisation block built to push your bench press, with supporting pressing and back volume around it. 4 days a week.',
