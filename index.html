@@ -858,16 +858,6 @@
                     <label>Squat ceiling (kg × 8)</label>
                     <input type="number" inputmode="decimal" id="rtpCeilSquat" value="140" step="2.5">
                 </div>
-            <div class="options-row">
-                <div class="input-group">
-                    <label>Arm &amp; Delt Volume</label>
-                    <select id="rtpArmVolume">
-                        <option value="standard">Standard</option>
-                        <option value="high" selected>High</option>
-                        <option value="apeshit">Apeshit</option>
-                    </select>
-                </div>
-            </div>
             </div>
             <div class="options-row">
                 <div class="input-group">
@@ -905,6 +895,14 @@
                         <option value="8">8 reps (Hypertrophy)</option>
                     </select>
                 </div>
+                <div class="input-group" id="benchmaxLegGroup" style="display:none;">
+                    <label>Leg Day Main Lift</label>
+                    <select id="benchmaxLegMain" onchange="handleFocusChange()">
+                        <option value="squat" selected>Squat</option>
+                        <option value="dead">Deadlift</option>
+                        <option value="none">None (accessories only)</option>
+                    </select>
+                </div>
                 <div class="input-group" id="progressionGoalGroup" style="display:none;">
                     <label>Progression Goal</label>
                     <select id="progressionGoal">
@@ -932,8 +930,9 @@
                         <label>Reps</label>
                         <select id="dead-reps" onchange="updateE1RM('dead')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -962,8 +961,9 @@
                         <label>Reps</label>
                         <select id="squat-reps" onchange="updateE1RM('squat')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -992,8 +992,9 @@
                         <label>Reps</label>
                         <select id="bench-reps" onchange="updateE1RM('bench')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1022,8 +1023,9 @@
                         <label>Reps</label>
                         <select id="ohp-reps" onchange="updateE1RM('ohp')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1070,8 +1072,9 @@
                         <label>Reps</label>
                         <select id="row-reps" onchange="updateE1RM('row')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1099,8 +1102,9 @@
                         <label>Reps</label>
                         <select id="frontsquat-reps" onchange="updateE1RM('frontsquat')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1129,8 +1133,9 @@
                         <label>Reps</label>
                         <select id="rdl-reps" onchange="updateE1RM('rdl')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1158,8 +1163,9 @@
                         <label>Reps</label>
                         <select id="larsen-reps" onchange="updateE1RM('larsen')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1199,8 +1205,9 @@
                         <label>Reps</label>
                         <select id="pausedead-reps" onchange="updateE1RM('pausedead')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1229,8 +1236,9 @@
                         <label>Reps</label>
                         <select id="pausesquat-reps" onchange="updateE1RM('pausesquat')">
                             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                            <option value="5" selected>5</option><option value="6">6</option>
-                            <option value="7">7</option><option value="8">8</option>
+                            <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -1649,7 +1657,10 @@
 
         const weeklyRPE    = [7, 8, 8.5, 9];
         const cuttingRPE   = [6, 6.5, 7, 7.5, 8, 8, 8, 8];
-        const validReps    = [1, 2, 3, 5, 6, 8];
+        // Single source of truth for prescribable rep targets. Must match the
+        // Target Rep Range select. 4 and 7 were missing here, which forced
+        // back-off sets to make 3-rep jumps (a 5-rep top set backed off to 8s).
+        const validReps    = [1, 2, 3, 4, 5, 6, 7, 8];
         const backoffPercent  = 0.85;
         const variationPercent = 0.85;
 
@@ -2084,6 +2095,7 @@
             const daysGroup     = document.getElementById('trainingDaysGroup');
             const repRangeGroup = document.getElementById('repRangeGroup');
             const progressGroup = document.getElementById('progressionGoalGroup');
+            const benchLegGroup = document.getElementById('benchmaxLegGroup');
             const gluteBlock    = document.getElementById('gluteBridgeBlock');
             const rdlOptTag     = document.getElementById('rdlOptionalTag');
             const rdlReqTag     = document.getElementById('rdlRequiredTag');
@@ -2174,8 +2186,21 @@
             repRangeGroup.style.display = r.showRepRange ? '' : 'none';
             progressGroup.style.display = r.showProgress ? '' : 'none';
 
+            // Bench Max: the leg day main lift is user-choosable. Only this program
+            // exposes it, and the choice decides which main lift block stays visible
+            // (previously Bench Max demanded a deadlift max it never programmed).
+            const isBenchMaxFocus = focus === 'benchmax';
+            if (benchLegGroup) benchLegGroup.style.display = isBenchMaxFocus ? '' : 'none';
+            if (isBenchMaxFocus) {
+                const legMain = document.getElementById('benchmaxLegMain').value;
+                const squatBlk = document.getElementById('squatBlock');
+                const deadBlk  = document.getElementById('deadBlock');
+                if (squatBlk) squatBlk.style.display = (legMain === 'squat') ? '' : 'none';
+                if (deadBlk)  deadBlk.style.display  = (legMain === 'dead')  ? '' : 'none';
+            }
+
             // Show options panel only if at least one field is visible
-            optionsPanel.style.display = (r.showDays || r.showRepRange || r.showProgress) ? 'block' : 'none';
+            optionsPanel.style.display = (r.showDays || r.showRepRange || r.showProgress || isBenchMaxFocus) ? 'block' : 'none';
 
             const rtpPanel = document.getElementById('rtpPanel');
             if (rtpPanel) rtpPanel.style.display = (focus === 'return_to_training') ? 'block' : 'none';
@@ -2593,7 +2618,14 @@
             if (isBeginner)            requiredLifts = [];
             else if (isBeginnerFW)     requiredLifts = [];
             else if (isReturnToTraining) requiredLifts = [];
-            else if (isBenchMax)       requiredLifts = ['bench', 'squat', 'dead'];
+            // Bench Max only ever needs the bench, plus whichever lift the user
+            // picked to anchor the leg day. The old list demanded a deadlift max
+            // that the program never prescribed (it was only an RDL fallback).
+            else if (isBenchMax) {
+                const legMain = document.getElementById('benchmaxLegMain').value;
+                requiredLifts = ['bench'];
+                if (legMain === 'squat' || legMain === 'dead') requiredLifts.push(legMain);
+            }
             else if (isMassBuilder)    requiredLifts = ['squat'];
             else if (isMassBuilderPlus) requiredLifts = [];
             else if (isPeaking)        requiredLifts = ['squat', 'bench', 'dead'];
@@ -2806,8 +2838,10 @@
             const boLabel = holdReps ? `Back-off · −${Math.round(boDrop*100)}% · RPE climbs` : `Back-off · RPE ${backoffRpe}`;
             const boSets  = isDeload ? 1 : (holdReps && rpe >= 8.5 ? 3 : 2);          // progression lives here
             const hasFrontSquat = e1rms.frontsquat !== undefined;
-            const fsE1RM = hasFrontSquat ? e1rms.frontsquat : (e1rms.squat * 0.85);
-            const fsWeight = roundToPlate(calculateWeight(fsE1RM, backoffReps, backoffRpe));
+            // Guard the fallback: a blank squat would otherwise print "NaNkg".
+            const fsE1RM = hasFrontSquat ? e1rms.frontsquat
+                                         : (e1rms.squat ? e1rms.squat * 0.85 : null);
+            const fsWeight = fsE1RM ? roundToPlate(calculateWeight(fsE1RM, backoffReps, backoffRpe)) : null;
             const isPL = focus === 'powerlifting';
             const accReps = isPL ? 8 : 12;
             const sets = isDeload ? 2 : 3;
@@ -2826,7 +2860,7 @@
                 <div class="section-divider"></div>
                 <div class="exercise-row">
                     <span class="exercise-name secondary">Front Squat / High Bar Squat</span>
-                    <span class="exercise-prescription">${sets}×${backoffReps} @ <span class="weight">${fsWeight}kg</span></span>
+                    <span class="exercise-prescription">${sets}×${backoffReps}${fsWeight ? ` @ <span class="weight">${fsWeight}kg</span>` : ` @ RPE ${backoffRpe}`}</span>
                 </div>
                 <div class="section-divider"></div>`;
             if (!isDeload) {
@@ -3031,10 +3065,24 @@
             if (isWeek4 && !isDeload && progressionGoal === 'weight') deadTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
-            const deadBackoff = roundToPlate(deadTop * backoffPercent);
+            const backoffRpe  = clampRpe(rpe - 1);
+            const holdReps    = backoffReps === targetReps;
+            const boDrop      = backoffDrop(targetReps, rpe);
+            // Flat 0.85 off the top set, then performed for MORE reps, put these
+            // back-offs a couple of points under the RPE 6 floor. Use the same
+            // model as the 4-day generators: hold reps and drop load, or step the
+            // reps and re-anchor to RPE.
+            const boLabel = holdReps
+                ? `Back-off · −${Math.round(boDrop*100)}%`
+                : `Back-off · RPE ${backoffRpe}`;
+            const deadBackoff = holdReps
+                ? roundToPlate(deadTop * (1 - boDrop))
+                : roundToPlate(calculateWeight(e1rms.dead, backoffReps, backoffRpe));
             let squatTop = roundToPlate(calculateWeight(e1rms.squat, targetReps, rpe));
             if (isWeek4 && !isDeload && progressionGoal === 'weight') squatTop += 2.5;
-            const squatBackoff = roundToPlate(squatTop * backoffPercent);
+            const squatBackoff = holdReps
+                ? roundToPlate(squatTop * (1 - boDrop))
+                : roundToPlate(calculateWeight(e1rms.squat, backoffReps, backoffRpe));
             const isPL = focus === 'powerlifting';
             const accReps = isPL ? 8 : 12;
             const backoffSets = isDeload ? 1 : 2;
@@ -3044,10 +3092,10 @@
                 html += `
                     <div class="day-title">Day 2: Squat + Deadlift</div>
                     <div class="exercise-row"><span class="exercise-name main">Squat<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${squatTop}kg</span></span></div>
-                    <div class="exercise-row"><span class="exercise-name backoff">Squat<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${squatBackoff}kg</span></span></div>
+                    <div class="exercise-row"><span class="exercise-name backoff">Squat<span class="exercise-label">${boLabel}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${squatBackoff}kg</span></span></div>
                     <div class="section-divider"></div>
                     <div class="exercise-row"><span class="exercise-name main">Deadlift<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${deadTop}kg</span></span></div>
-                    <div class="exercise-row"><span class="exercise-name backoff">Deadlift<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${deadBackoff}kg</span></span></div>
+                    <div class="exercise-row"><span class="exercise-name backoff">Deadlift<span class="exercise-label">${boLabel}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${deadBackoff}kg</span></span></div>
                     <div class="section-divider"></div>`;
                 if (!isDeload) {
                     html += `
@@ -3059,7 +3107,7 @@
                 html += `
                     <div class="day-title">Day 2: Deadlift + Hack Squat</div>
                     <div class="exercise-row"><span class="exercise-name main">Deadlift<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${deadTop}kg</span></span></div>
-                    <div class="exercise-row"><span class="exercise-name backoff">Deadlift<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${deadBackoff}kg</span></span></div>
+                    <div class="exercise-row"><span class="exercise-name backoff">Deadlift<span class="exercise-label">${boLabel}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${deadBackoff}kg</span></span></div>
                     <div class="section-divider"></div>
                     <div class="exercise-row"><span class="exercise-name secondary">Hack Squat</span><span class="exercise-prescription">3×${targetReps}</span></div>
                     <div class="section-divider"></div>`;
@@ -3076,22 +3124,53 @@
         }
 
         function generateBBLegsDay(e1rms, targetReps, rpe, isDeload, isWeek4, progressionGoal, focus) {
-            let squatTop = roundToPlate(calculateWeight(e1rms.squat, targetReps, rpe));
-            if (isWeek4 && !isDeload && progressionGoal === 'weight') squatTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
-            const squatBackoff = roundToPlate(squatTop * backoffPercent);
-            const rdlE1RM = e1rms.rdl || (e1rms.dead * 0.80);
-            const rdlW = roundToPlate(calculateWeight(rdlE1RM, backoffReps, rpe));
+            const backoffRpe  = clampRpe(rpe - 1);
             const sets = isDeload ? 2 : 3;
             const backoffSets = isDeload ? 1 : 2;
 
+            // Which lift anchors this day. Bench Max lets the user choose (or drop
+            // it entirely); every other caller keeps the original squat behaviour.
+            let legMain = 'squat';
+            if (focus === 'benchmax') {
+                const sel = document.getElementById('benchmaxLegMain');
+                if (sel) legMain = sel.value;
+            }
+            if (legMain === 'squat' && e1rms.squat === undefined) legMain = 'none';
+            if (legMain === 'dead'  && e1rms.dead  === undefined) legMain = 'none';
+
             let html = `<div class="day-block">
-                <div class="day-title">Day 2: Legs</div>
-                <div class="exercise-row"><span class="exercise-name main">Squat<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${squatTop}kg</span></span></div>
-                <div class="exercise-row"><span class="exercise-name backoff">Squat<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${squatBackoff}kg</span></span></div>
-                <div class="section-divider"></div>
-                <div class="exercise-row"><span class="exercise-name secondary">Romanian Deadlift</span><span class="exercise-prescription">${sets}×${backoffReps} @ <span class="weight">${rdlW}kg</span></span></div>
+                <div class="day-title">Day 2: Legs</div>`;
+
+            if (legMain !== 'none') {
+                const mainName = legMain === 'dead' ? 'Deadlift' : 'Squat';
+                const mainE1RM = legMain === 'dead' ? e1rms.dead : e1rms.squat;
+                let mainTop = roundToPlate(calculateWeight(mainE1RM, targetReps, rpe));
+                if (isWeek4 && !isDeload && progressionGoal === 'weight') mainTop += 2.5;
+                // Back-off now uses the same model as every other main-lift day:
+                // hold the reps and drop load, or step the reps and re-anchor to
+                // RPE. The old flat 0.85 ignored both rep range and top-set RPE.
+                const holdReps = backoffReps === targetReps;
+                const boDrop   = backoffDrop(targetReps, rpe);
+                const mainBackoff = holdReps
+                    ? roundToPlate(mainTop * (1 - boDrop))
+                    : roundToPlate(calculateWeight(mainE1RM, backoffReps, backoffRpe));
+                const boLabel = holdReps
+                    ? `Back-off · −${Math.round(boDrop*100)}%`
+                    : `Back-off · RPE ${backoffRpe}`;
+                html += `
+                <div class="exercise-row"><span class="exercise-name main">${mainName}<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'} · RPE ${rpe}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${mainTop}kg</span></span></div>
+                <div class="exercise-row"><span class="exercise-name backoff">${mainName}<span class="exercise-label">${boLabel}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${mainBackoff}kg</span></span></div>
+                <div class="section-divider"></div>`;
+            }
+
+            // RDL: prescribe by feel when there is no anchor, rather than printing
+            // NaN or forcing the user to enter a lift the program never uses.
+            const rdlE1RM = e1rms.rdl || (e1rms.dead ? e1rms.dead * 0.80 : null);
+            const rdlW = rdlE1RM ? roundToPlate(calculateWeight(rdlE1RM, backoffReps, backoffRpe)) : null;
+            html += `
+                <div class="exercise-row"><span class="exercise-name secondary">Romanian Deadlift</span><span class="exercise-prescription">${sets}×${backoffReps}${rdlW ? ` @ <span class="weight">${rdlW}kg</span>` : ` @ RPE ${backoffRpe}`}</span></div>
                 <div class="section-divider"></div>`;
             if (!isDeload) {
                 html += `
@@ -3111,7 +3190,20 @@
             const pauseW = roundToPlate(benchTop * 0.90);
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
-            const backoffW = roundToPlate(pauseW * backoffPercent);
+            const backoffRpe  = clampRpe(rpe - 1);
+            // The old back-off was a flat pauseW x 0.85, then performed for MORE
+            // reps than the top set. Measured against the pause variant's own
+            // implied e1RM that came out near 68% for 8 reps, just under the 69.4%
+            // RPE 6 floor, so the set sat below the bottom of the chart. Anchor it
+            // to the variant's e1RM so it lands where the chart says it should.
+            const pauseE1RM = e1rms.bench * 0.90;
+            const holdRepsP = backoffReps === targetReps;
+            const backoffW  = holdRepsP
+                ? roundToPlate(pauseW * (1 - backoffDrop(targetReps, rpe)))
+                : roundToPlate(calculateWeight(pauseE1RM, backoffReps, backoffRpe));
+            const boLabelP  = holdRepsP
+                ? `Back-off · −${Math.round(backoffDrop(targetReps, rpe)*100)}%`
+                : `Back-off · RPE ${backoffRpe}`;
             const hasRow = e1rms.row !== undefined;
             const rowW = hasRow ? roundToPlate(calculateWeight(e1rms.row, backoffReps, rpe)) : null;
             const sets = isDeload ? 2 : 3;
@@ -3120,7 +3212,7 @@
             let html = `<div class="day-block">
                 <div class="day-title">Day 3: 3-Second Pause Bench</div>
                 <div class="exercise-row"><span class="exercise-name main">3-Sec Pause Bench<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${pauseW}kg</span></span></div>
-                <div class="exercise-row"><span class="exercise-name backoff">3-Sec Pause Bench<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${backoffW}kg</span></span></div>
+                <div class="exercise-row"><span class="exercise-name backoff">3-Sec Pause Bench<span class="exercise-label">${boLabelP}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${backoffW}kg</span></span></div>
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name secondary">Bent Over Row / Pendlay Row</span><span class="exercise-prescription">${sets}×${backoffReps}${rowW?` @ <span class="weight">${rowW}kg</span>`:''}</span></div>
                 <div class="exercise-row"><span class="exercise-name secondary">Weighted Pull Ups</span><span class="exercise-prescription">${sets}×6</span></div>
@@ -3143,16 +3235,27 @@
             const larsenW = roundToPlate(benchTop * 0.80);
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
-            const backoffW = roundToPlate(larsenW * backoffPercent);
+            const backoffRpe  = clampRpe(rpe - 1);
+            // Same compounding problem as the pause day: bench x 0.80 x 0.85 for
+            // more reps than the top set, about 67% of the Larsen's own implied
+            // e1RM, again just under the RPE 6 floor. Anchor it to that e1RM.
+            const larsenE1RM = e1rms.bench * 0.80;
+            const holdRepsL  = backoffReps === targetReps;
+            const backoffW   = holdRepsL
+                ? roundToPlate(larsenW * (1 - backoffDrop(targetReps, rpe)))
+                : roundToPlate(calculateWeight(larsenE1RM, backoffReps, backoffRpe));
+            const boLabelL   = holdRepsL
+                ? `Back-off · −${Math.round(backoffDrop(targetReps, rpe)*100)}%`
+                : `Back-off · RPE ${backoffRpe}`;
             const larsenCloseE1rm = e1rms.larsen || (e1rms.bench * 0.90);
-            const varW = roundToPlate(calculateWeight(larsenCloseE1rm, backoffReps, rpe));
+            const varW = roundToPlate(calculateWeight(larsenCloseE1rm, backoffReps, backoffRpe));
             const sets = isDeload ? 2 : 3;
             const backoffSets = isDeload ? 1 : 2;
 
             let html = `<div class="day-block">
                 <div class="day-title">Day 4: Larsen Press</div>
                 <div class="exercise-row"><span class="exercise-name main">Larsen Press<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${larsenW}kg</span></span></div>
-                <div class="exercise-row"><span class="exercise-name backoff">Larsen Press<span class="exercise-label">Back-off</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${backoffW}kg</span></span></div>
+                <div class="exercise-row"><span class="exercise-name backoff">Larsen Press<span class="exercise-label">${boLabelL}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${backoffW}kg</span></span></div>
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name secondary">Lat Pulldown</span><span class="exercise-prescription">${sets}×${backoffReps}</span></div>
                 <div class="section-divider"></div>`;
@@ -6195,7 +6298,7 @@
             if(reps > 0 && selectable.includes(String(reps))){
                 wIn.value = attempted; rIn.value = String(reps); pIn.value = '10';
             } else {
-                wIn.value = Math.round(newE1 * 2) / 2; rIn.value = '1'; pIn.value = '10';
+                wIn.value = roundToPlate(newE1); rIn.value = '1'; pIn.value = '10';
             }
             try { updateE1RM(key); } catch(e){}
 
