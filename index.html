@@ -1663,6 +1663,12 @@
         const validReps    = [1, 2, 3, 4, 5, 6, 7, 8];
         const backoffPercent  = 0.85;
         const variationPercent = 0.85;
+        // Single source of truth for the Larsen fallback. Used wherever a Larsen
+        // weight is needed and the user hasn't entered their own number. Had been
+        // written inline as 0.90 in three places and 0.80 in a fourth, which is how
+        // Day 4 of Bench Max ended up prescribing a close grip variation heavier
+        // than the lift it assists.
+        const larsenFallback = 0.90;
 
         // ── Math helpers ────────────────────────────────────────────────────────
         function getPercentage(reps, rpe) {
@@ -2021,9 +2027,11 @@
                         if (ssLabel && !nameEl.classList.contains('superset')) name += ' [SS]';
 
                         const prescText = prescEl.textContent.trim();
-                        const paddedName = name.length > maxNameLen ? name.substring(0, maxNameLen) : name;
-                        const gap = Math.max(2, maxNameLen - paddedName.length + 2);
-                        lines.push(prefix + paddedName + ' '.repeat(gap) + prescText);
+                        // Names longer than the column push the prescription right
+                        // rather than being cut. Truncating here was silently
+                        // eating label text, e.g. "Top Set -- bench -10% . R".
+                        const gap = Math.max(2, maxNameLen - name.length + 2);
+                        lines.push(prefix + name + ' '.repeat(gap) + prescText);
                     });
                 });
                 lines.push('');
@@ -2158,7 +2166,7 @@
                                     visibleSec: [] },
                 bulgarian_lite:   { showDays: false, showRepRange: true , showProgress: false, showLifts: true,
                                     hiddenMain: ['ohpBlock'],
-                                    visibleSec: [] },
+                                    visibleSec: ['larsenBlock'] },
                 shoulder_growth:  { showDays: true,  showRepRange: true , showProgress: true,  showLifts: true,
                                     hiddenMain: is3 ? ['squatBlock'] : [],
                                     visibleSec: is3 ? ['larsenBlock'] : ['rdlBlock','larsenBlock'] },
@@ -2575,7 +2583,7 @@
             host.innerHTML = html + '</tbody></table>';
         }
 
-        const LIFT_LABELS = { dead:'Deadlift', squat:'Squat', bench:'Bench Press', ohp:'Overhead Press', rdl:'RDL', glutebridge:'Glute Bridge' };
+        const LIFT_LABELS = { dead:'Deadlift', squat:'Squat', bench:'Bench Press', ohp:'Overhead Press', rdl:'RDL', larsen:'Larsen Press', glutebridge:'Glute Bridge' };
         // Toast + flash + scroll-to instead of alert(): tells the user *which*
         // field is missing and takes them to it.
         function flashLifts(keys){
@@ -2949,7 +2957,7 @@
                 : roundToPlate(calculateWeight(e1rms.bench, backoffReps, backoffRpe)); // rep-increase: keep RPE anchor
             const boLabel = holdReps ? `Back-off · −${Math.round(boDrop*100)}% · RPE climbs` : `Back-off · RPE ${backoffRpe}`;
             const boSets  = isDeload ? 1 : (holdReps && rpe >= 8.5 ? 3 : 2);          // progression lives here
-            const larsenE1rm = e1rms.larsen || (e1rms.bench * 0.90);
+            const larsenE1rm = e1rms.larsen || (e1rms.bench * larsenFallback);
             const larsenW = roundToPlate(calculateWeight(larsenE1rm, backoffReps, backoffRpe));
             const isPL = focus === 'powerlifting';
             const isBB = focus === 'bodybuilding';
@@ -3230,16 +3238,18 @@
         }
 
         function generateLarsenBenchDay(e1rms, targetReps, rpe, isDeload, isWeek4, progressionGoal, focus) {
-            let benchTop = roundToPlate(calculateWeight(e1rms.bench, targetReps, rpe));
-            if (isWeek4 && !isDeload && progressionGoal === 'weight') benchTop += 5;
-            const larsenW = roundToPlate(benchTop * 0.80);
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
             const backoffRpe  = clampRpe(rpe - 1);
-            // Same compounding problem as the pause day: bench x 0.80 x 0.85 for
-            // more reps than the top set, about 67% of the Larsen's own implied
-            // e1RM, again just under the RPE 6 floor. Anchor it to that e1RM.
-            const larsenE1RM = e1rms.bench * 0.80;
+            // One anchor for the whole day. The top set used to be bench top set
+            // x 0.80 while the close grip variation ran off a separate bench x 0.90
+            // anchor with no variation discount, so the accessory came out heavier
+            // than the lift it assists. Everything here now hangs off the Larsen's
+            // own e1RM, and the entered Larsen number actually drives the Larsen.
+            const larsenE1RM = e1rms.larsen || (e1rms.bench * larsenFallback);
+            let larsenW = roundToPlate(calculateWeight(larsenE1RM, targetReps, rpe));
+            if (isWeek4 && !isDeload && progressionGoal === 'weight') larsenW += 2.5;
+            const larsenLabel = e1rms.larsen ? 'Top Set' : 'Top Set — bench −10%';
             const holdRepsL  = backoffReps === targetReps;
             const backoffW   = holdRepsL
                 ? roundToPlate(larsenW * (1 - backoffDrop(targetReps, rpe)))
@@ -3247,14 +3257,15 @@
             const boLabelL   = holdRepsL
                 ? `Back-off · −${Math.round(backoffDrop(targetReps, rpe)*100)}%`
                 : `Back-off · RPE ${backoffRpe}`;
-            const larsenCloseE1rm = e1rms.larsen || (e1rms.bench * 0.90);
-            const varW = roundToPlate(calculateWeight(larsenCloseE1rm, backoffReps, backoffRpe));
+            // Close grip is a harder variation of the same lift, so it discounts
+            // off the same e1RM instead of carrying an anchor of its own.
+            const varW = roundToPlate(calculateWeight(larsenE1RM * variationPercent, backoffReps, backoffRpe));
             const sets = isDeload ? 2 : 3;
             const backoffSets = isDeload ? 1 : 2;
 
             let html = `<div class="day-block">
                 <div class="day-title">Day 4: Larsen Press</div>
-                <div class="exercise-row"><span class="exercise-name main">Larsen Press<span class="exercise-label">${isAmrap?'AMRAP':'Top Set'}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${larsenW}kg</span></span></div>
+                <div class="exercise-row"><span class="exercise-name main">Larsen Press<span class="exercise-label">${isAmrap?'AMRAP':larsenLabel} · RPE ${rpe}</span></span><span class="exercise-prescription">1×${isAmrap?'AMRAP':targetReps} @ <span class="weight">${larsenW}kg</span></span></div>
                 <div class="exercise-row"><span class="exercise-name backoff">Larsen Press<span class="exercise-label">${boLabelL}</span></span><span class="exercise-prescription">${backoffSets}×${backoffReps} @ <span class="weight">${backoffW}kg</span></span></div>
                 <div class="section-divider"></div>
                 <div class="exercise-row"><span class="exercise-name secondary">Lat Pulldown</span><span class="exercise-prescription">${sets}×${backoffReps}</span></div>
@@ -4767,7 +4778,7 @@
 
         // ── Day 1: Larsen Press focus + chest/back/shoulder accessories ──────────
         function sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
-            const larsenE1rm = e1rms.larsen || (e1rms.bench * 0.90);
+            const larsenE1rm = e1rms.larsen || (e1rms.bench * larsenFallback);
             let lTop  = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe))) : null;
             if (isWeek4 && !isDeload && progressGoal === 'weight' && lTop) lTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
@@ -5733,7 +5744,7 @@
             html += `<div class="info-box">
                 <strong>Powerlifting — Advanced RPE 4 Day:</strong> Competition squat and bench with variation work and accessory compounds. RPE climbs 7 → 8 → 8.5 → 9 across weeks 1–4. Week 5 is a mandatory deload at RPE 6 — 50% volume, 65% of working weights.
                 <br><br>
-                <strong>Pause Deadlift</strong> is −20% of your deadlift e1RM (or use your own number), prescribed at RPE −2 from the top set with +2 reps, capped at 8. <strong>Pause Squat</strong> is −20% of your squat e1RM (or your own number). <strong>3CT Pause Bench</strong> uses −10% of bench top weight at −2 reps from your target. <strong>Larsen Press</strong> uses your Larsen e1RM if entered, otherwise bench −20%.
+                <strong>Pause Deadlift</strong> is −20% of your deadlift e1RM (or use your own number), prescribed at RPE −2 from the top set with +2 reps, capped at 8. <strong>Pause Squat</strong> is −20% of your squat e1RM (or your own number). <strong>3CT Pause Bench</strong> uses −10% of bench top weight at −2 reps from your target. <strong>Larsen Press</strong> uses your Larsen e1RM if entered, otherwise bench × 90%.
                 <br><br>
                 Once you have completed Week 5, see the <em>"What to run next after Week 5"</em> guide above.
             </div>`;
@@ -5818,8 +5829,8 @@
             if (isWeek4 && !isDeload && progressGoal === 'weight') pb1 += 2.5;
             const pbDeload = roundToPlate(pb1 * 0.65);
 
-            // Larsen Press — from larsen e1rm or bench −20%, RPE chart back-offs
-            const larsenE1rm   = e1rms.larsen || (e1rms.bench * 0.90);
+            // Larsen Press — from larsen e1rm or bench × 90%, RPE chart back-offs
+            const larsenE1rm   = e1rms.larsen || (e1rms.bench * larsenFallback);
             const larsenW      = roundToPlate(calculateWeight(larsenE1rm, pbReps, clampRpe(topRpe - 1)));
             const larsenW2     = roundToPlate(calculateWeight(larsenE1rm, pbReps, clampRpe(topRpe - 2)));
             const larsenW3     = roundToPlate(calculateWeight(larsenE1rm, pbReps, clampRpe(topRpe - 3)));
@@ -6149,7 +6160,10 @@
             'shoulder_growth','arm_growth','leg_growth','advanced_rpe'];
         function liftKeyFromMainName(raw){
             const n = (raw || '').toLowerCase();
-            if(/pause|deficit|larsen|front|safety|hip thrust|glute/.test(n)) return null;
+            // Larsen now runs off its own e1RM input, so a failed Larsen top set
+            // maps straight back to that lift instead of being a dead end.
+            if(n.includes('larsen')) return /close grip/.test(n) ? null : 'larsen';
+            if(/pause|deficit|front|safety|hip thrust|glute/.test(n)) return null;
             if(n.includes('bench')) return 'bench';
             if(n === 'rdl' || n.includes('romanian')) return 'rdl';
             if(n.includes('deadlift')) return 'dead';
