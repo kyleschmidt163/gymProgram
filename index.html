@@ -1477,6 +1477,7 @@
                     <li><strong>RDL</strong> → Stiff Legged Deadlift → Pause Deadlifts → Hamstring Curls → Single Leg RDL (worst case — no calculated weight)</li>
                     <li><strong>Larsen Press</strong> → Pause Bench Press → Close Grip Bench Press</li>
                     <li><strong>Pendlay Row</strong> → Bent Over Row → DB Row → Machine Row (worst case)</li>
+                    <li><strong>Chest Supported Row</strong> → Seal Row → Machine Row → DB Row → Inverted Row (worst case)</li>
                     <li><strong>Pull Ups</strong> → Lat Pulldowns → Chin Ups → Assisted Pull Ups (worst case)</li>
                     <li><strong>Barbell Curl</strong> → Incline DB Curl → Standing Alternating DB Curl → Concentration Curl (worst case)</li>
                     <li><strong>Skullcrushers (BB)</strong> → Skullcrushers (DB) → Rope Pressdown → Single Arm Rope Pressdown → Dips (worst case — too labour intensive)</li>
@@ -1805,6 +1806,16 @@
                     {focus:'powerlifting'},{focus:'bodybuilding'},
                     {focus:'benchmax'},{focus:'rpe_cutting'},
                     {focus:'shoulder_growth'},{focus:'leg_growth'}
+                ]
+            },
+            {
+                id: 'sub_csrow',
+                label: 'Chest Supported Row',
+                patterns: ['Chest Supported Row'],
+                alts: ['Seal Row', 'Machine Row', 'DB Row', 'Inverted Row'],
+                noWeight: [],
+                programs: [
+                    {focus:'benchmax'}
                 ]
             },
             {
@@ -3257,9 +3268,11 @@
             const boLabelL   = holdRepsL
                 ? `Back-off · −${Math.round(backoffDrop(targetReps, rpe)*100)}%`
                 : `Back-off · RPE ${backoffRpe}`;
-            // Close grip is a harder variation of the same lift, so it discounts
-            // off the same e1RM instead of carrying an anchor of its own.
-            const varW = roundToPlate(calculateWeight(larsenE1RM * variationPercent, backoffReps, backoffRpe));
+            // The accessory slot here used to be a Close Grip Larsen Press. Two
+            // constraints stacked on one movement, at ~65% of bench, after three
+            // sets of the same pattern. Replaced with a horizontal pull, which is
+            // what this day was actually short of: six pressing sets against one
+            // pulldown, in a block that benches three days out of four.
             const sets = isDeload ? 2 : 3;
             const backoffSets = isDeload ? 1 : 2;
 
@@ -3272,7 +3285,7 @@
                 <div class="section-divider"></div>`;
             if (!isDeload) {
                 html += `
-                    <div class="exercise-row"><span class="exercise-name accessory">Close Grip Larsen Press</span><span class="exercise-prescription">3×${backoffReps} @ <span class="weight">${varW}kg</span></span></div>
+                    <div class="exercise-row"><span class="exercise-name accessory">Chest Supported Row</span><span class="exercise-prescription">3×${backoffReps}</span></div>
                     <div class="exercise-row"><span class="exercise-name accessory">Cable Row</span><span class="exercise-prescription">3×8</span></div>
                     <div class="section-divider"></div>
                     <div class="exercise-row"><span class="exercise-name superset">Incline Curls<span class="superset-label">Superset</span></span><span class="exercise-prescription">4×10</span></div>
