@@ -907,7 +907,14 @@
                     <label>Progression Goal</label>
                     <select id="progressionGoal">
                         <option value="reps">More Reps (Week 4 AMRAP)</option>
-                        <option value="weight">More Weight (+2.5kg Week 4)</option>
+                        <option value="weight" id="progressWeightOpt">More Weight (+2.5kg Week 4)</option>
+                    </select>
+                </div>
+                <div class="input-group" id="plateStepGroup">
+                    <label>Smallest Barbell Jump</label>
+                    <select id="plateStep">
+                        <option value="2.5" selected>2.5kg (standard plates)</option>
+                        <option value="1.25">1.25kg (have 0.625kg plates)</option>
                     </select>
                 </div>
             </div>
@@ -1685,7 +1692,67 @@
             return e1rm * (getPercentage(reps, rpe) / 100);
         }
 
-        function roundToPlate(w) { return Math.round(w / 2.5) * 2.5; }
+        // Smallest barbell jump. 2.5kg = standard plates (1.25kg per side).
+        // 1.25kg needs 0.625kg fractional plates. Set from #plateStep on generate.
+        let PLATE_STEP = 2.5;
+        function roundToPlate(w) { return Math.round(w / PLATE_STEP) * PLATE_STEP; }
+
+        // The RPE steps the current program climbs through week to week. Set on
+        // generate. null = weeks don't share a rep target (Peaking), so no fitting.
+        let ACTIVE_LADDER = null;
+        const __ladderCache = new Map();
+
+        // Top-set weight for a lift whose RPE climbs week to week.
+        // Rounding each week on its own to the nearest plate can give two weeks the
+        // same weight: one half-RPE step is ~1.5% of e1RM, which is under 2.5kg for
+        // any e1RM below ~165kg (e.g. 135kg e1RM x3: RPE 8 = 116.5, RPE 8.5 = 118.5,
+        // both round to 117.5). Bumping a repeated week by one plate fixes that pair
+        // but cascades into the next week at low e1RMs. So fit the whole ladder at
+        // once, so a higher RPE gets a heavier weight wherever that can be done
+        // without pushing any week off its label (limits below).
+        function topSet(e1rm, reps, rpe) {
+            const ladder = ACTIVE_LADDER;
+            if (!e1rm || !ladder || !ladder.includes(rpe)) return roundToPlate(calculateWeight(e1rm, reps, rpe));
+            const rpes = [...new Set(ladder)].sort((a, b) => a - b);
+            const key = [e1rm, reps, PLATE_STEP, rpes.join(',')].join('|');
+            let fit = __ladderCache.get(key);
+            if (!fit) {
+                const t = rpes.map(r => calculateWeight(e1rm, reps, r) / PLATE_STEP);
+                // Search every ladder: each week within MAX_ERR plate jumps of its
+                // exact weight, never lighter than the week before. Prefer the fewest
+                // repeated weeks, then the smallest worst-case error, then total error.
+                // MAX_ERR = the smallest gap between neighbouring ladder RPEs for this
+                // lift and rep target (i.e. no week ends up more than one half-RPE step
+                // off its label), or plain rounding error if that's larger. Light lifts
+                // can't always climb every week inside that, so they keep as few
+                // repeated weeks as possible rather than drifting heavy.
+                let gapMin = Infinity;
+                for (let i = 1; i < t.length; i++) gapMin = Math.min(gapMin, t[i] - t[i - 1]);
+                const MAX_ERR = Math.max(0.5, gapMin);
+                let best = null;
+                const pick = [];
+                const better = (a, b) => !b || a.rep < b.rep || (a.rep === b.rep && (a.maxErr < b.maxErr - 1e-9 ||
+                    (Math.abs(a.maxErr - b.maxErr) < 1e-9 && a.sumErr < b.sumErr - 1e-9)));
+                (function search(j, rep, maxErr, sumErr) {
+                    if (best && rep > best.rep) return;
+                    if (j === t.length) {
+                        const cand = { rep, maxErr, sumErr, w: pick.slice() };
+                        if (better(cand, best)) best = cand;
+                        return;
+                    }
+                    const lo = Math.max(Math.ceil(t[j] - MAX_ERR - 1e-9), j ? pick[j - 1] : -Infinity);
+                    for (let c = lo; c <= Math.floor(t[j] + MAX_ERR + 1e-9); c++) {
+                        const e = Math.abs(c - t[j]);
+                        pick[j] = c;
+                        search(j + 1, rep + (j && c === pick[j - 1] ? 1 : 0), Math.max(maxErr, e), sumErr + e);
+                    }
+                })(0, 0, 0, 0);
+                fit = {};
+                rpes.forEach((r, i) => { fit[r] = (best ? best.w[i] : Math.round(t[i])) * PLATE_STEP; });
+                __ladderCache.set(key, fit);
+            }
+            return fit[rpe];
+        }
 
         function getBackoffReps(targetReps, focus, progressionGoal) {
             if (targetReps === 8) return 8;
@@ -1993,7 +2060,7 @@
             const metaParts = [focusName];
             if (showDays) metaParts.push(days === '3' ? '3 Day' : '4 Day');
             if (showReps) metaParts.push(targetReps + ' Rep Range');
-            metaParts.push(progressGoal === 'reps' ? 'AMRAP Progression' : '+2.5kg Progression');
+            metaParts.push(progressGoal === 'reps' ? 'AMRAP Progression' : (focus === 'benchmax' ? '+5kg Bench / +2.5kg Progression' : '+2.5kg Progression'));
 
             const lines = [];
             lines.push('='.repeat(60));
@@ -2219,7 +2286,12 @@
             }
 
             // Show options panel only if at least one field is visible
-            optionsPanel.style.display = (r.showDays || r.showRepRange || r.showProgress || isBenchMaxFocus) ? 'block' : 'none';
+            // Plate step applies to every program that calculates barbell weights.
+            const usesBarbellMath = focus !== 'beginner_machine' && focus !== 'return_to_training';
+            document.getElementById('plateStepGroup').style.display = usesBarbellMath ? '' : 'none';
+            document.getElementById('progressWeightOpt').textContent =
+                'More Weight (+' + (isBenchMaxFocus ? '5' : '2.5') + 'kg Week 4)';
+            optionsPanel.style.display = (r.showDays || r.showRepRange || r.showProgress || isBenchMaxFocus || usesBarbellMath) ? 'block' : 'none';
 
             const rtpPanel = document.getElementById('rtpPanel');
             if (rtpPanel) rtpPanel.style.display = (focus === 'return_to_training') ? 'block' : 'none';
@@ -2627,6 +2699,9 @@
             const isReturnToTraining = focus === 'return_to_training';
             const isAdvancedRPE = focus === 'advanced_rpe';
 
+            PLATE_STEP    = parseFloat(document.getElementById('plateStep').value) === 1.25 ? 1.25 : 2.5;
+            ACTIVE_LADDER = isCutting ? cuttingRPE : (isPeaking ? null : weeklyRPE);
+
             const e1rms = {};
             const lifts = ['dead', 'squat', 'bench', 'ohp'];
 
@@ -2782,7 +2857,9 @@
                         : `<strong>Progression:</strong> RPE rises from 7 → 8 → 8.5 → 9 across weeks 1–4.
                         ${progressGoal==='reps'
                             ? 'Week 4 top sets are AMRAP — aim for max reps to test your progress.'
-                            : 'Week 4 adds +2.5kg to each top set for weight progression.'}
+                            : (focus === 'benchmax'
+                                ? 'Week 4 adds +5kg to the Day 1 and Day 3 bench top sets and +2.5kg to the other top sets.'
+                                : 'Week 4 adds +2.5kg to each top set for weight progression.')}
                         Week 5 is a deload at 50% volume and RPE 6.`}
                 </div>`;
             }
@@ -2844,7 +2921,7 @@
         }
 
         function generateDeadliftDay(e1rms, targetReps, rpe, focus, isDeload, isWeek4, progressionGoal) {
-            let topWeight = roundToPlate(calculateWeight(e1rms.dead, targetReps, rpe));
+            let topWeight = topSet(e1rms.dead, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') topWeight += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
@@ -2899,7 +2976,7 @@
         }
 
         function generateSquatDay(e1rms, targetReps, rpe, focus, isDeload, isWeek4, progressionGoal) {
-            let topWeight = roundToPlate(calculateWeight(e1rms.squat, targetReps, rpe));
+            let topWeight = topSet(e1rms.squat, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') topWeight += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
@@ -2955,7 +3032,7 @@
         }
 
         function generateBenchDay(e1rms, targetReps, rpe, focus, isDeload, isWeek4, progressionGoal, days, dayNum) {
-            let topWeight = roundToPlate(calculateWeight(e1rms.bench, targetReps, rpe));
+            let topWeight = topSet(e1rms.bench, targetReps, rpe);
             const wInc = focus === 'benchmax' ? 5 : 2.5;
             if (isWeek4 && !isDeload && progressionGoal === 'weight') topWeight += wInc;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
@@ -3021,7 +3098,7 @@
         }
 
         function generatePushPressDay(e1rms, targetReps, rpe, focus, isDeload, days, isWeek4, progressionGoal) {
-            let topWeight = roundToPlate(calculateWeight(e1rms.ohp, targetReps, rpe));
+            let topWeight = topSet(e1rms.ohp, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') topWeight += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
@@ -3080,7 +3157,7 @@
         }
 
         function generateCombinedLegsDay(e1rms, targetReps, rpe, focus, isDeload, isWeek4, progressionGoal) {
-            let deadTop = roundToPlate(calculateWeight(e1rms.dead, targetReps, rpe));
+            let deadTop = topSet(e1rms.dead, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') deadTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoffReps = getBackoffReps(targetReps, focus, progressionGoal);
@@ -3097,7 +3174,7 @@
             const deadBackoff = holdReps
                 ? roundToPlate(deadTop * (1 - boDrop))
                 : roundToPlate(calculateWeight(e1rms.dead, backoffReps, backoffRpe));
-            let squatTop = roundToPlate(calculateWeight(e1rms.squat, targetReps, rpe));
+            let squatTop = topSet(e1rms.squat, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') squatTop += 2.5;
             const squatBackoff = holdReps
                 ? roundToPlate(squatTop * (1 - boDrop))
@@ -3165,7 +3242,7 @@
             if (legMain !== 'none') {
                 const mainName = legMain === 'dead' ? 'Deadlift' : 'Squat';
                 const mainE1RM = legMain === 'dead' ? e1rms.dead : e1rms.squat;
-                let mainTop = roundToPlate(calculateWeight(mainE1RM, targetReps, rpe));
+                let mainTop = topSet(mainE1RM, targetReps, rpe);
                 if (isWeek4 && !isDeload && progressionGoal === 'weight') mainTop += 2.5;
                 // Back-off now uses the same model as every other main-lift day:
                 // hold the reps and drop load, or step the reps and re-anchor to
@@ -3204,7 +3281,7 @@
         }
 
         function generatePauseBenchDay(e1rms, targetReps, rpe, isDeload, isWeek4, progressionGoal, focus) {
-            let benchTop = roundToPlate(calculateWeight(e1rms.bench, targetReps, rpe));
+            let benchTop = topSet(e1rms.bench, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') benchTop += 5;
             const pauseW = roundToPlate(benchTop * 0.90);
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
@@ -3224,7 +3301,7 @@
                 ? `Back-off · −${Math.round(backoffDrop(targetReps, rpe)*100)}%`
                 : `Back-off · RPE ${backoffRpe}`;
             const hasRow = e1rms.row !== undefined;
-            const rowW = hasRow ? roundToPlate(calculateWeight(e1rms.row, backoffReps, rpe)) : null;
+            const rowW = hasRow ? topSet(e1rms.row, backoffReps, rpe) : null;
             const sets = isDeload ? 2 : 3;
             const backoffSets = isDeload ? 1 : 2;
 
@@ -3258,7 +3335,7 @@
             // than the lift it assists. Everything here now hangs off the Larsen's
             // own e1RM, and the entered Larsen number actually drives the Larsen.
             const larsenE1RM = e1rms.larsen || (e1rms.bench * larsenFallback);
-            let larsenW = roundToPlate(calculateWeight(larsenE1RM, targetReps, rpe));
+            let larsenW = topSet(larsenE1RM, targetReps, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') larsenW += 2.5;
             const larsenLabel = e1rms.larsen ? 'Top Set' : 'Top Set — bench −10%';
             const holdRepsL  = backoffReps === targetReps;
@@ -3402,7 +3479,7 @@
             // Empty-bar floor (20kg) must apply to EVERY set or a very light trainee
             // ends up with a "top set" lighter than the back-offs (inverted pyramid).
             const BAR = 20;
-            const top = Math.max(roundToPlate(calculateWeight(e1rm, tr, rpe)), BAR);
+            const top = Math.max(topSet(e1rm, tr, rpe), BAR);
             const s2  = Math.max(roundToPlate(top - 10), BAR);
             const s3  = Math.max(roundToPlate(top - 20), BAR);
             const deload = Math.max(roundToPlate(top * 0.65), BAR);
@@ -3603,7 +3680,7 @@
         }
 
         function massDay1(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW, tr) {
-            let top = roundToPlate(calculateWeight(e1rms.squat, tr, rpe));
+            let top = topSet(e1rms.squat, tr, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoff  = roundToPlate(top * backoffPercent);
@@ -3657,7 +3734,7 @@
         }
 
         function massDay3(e1rms, rpe, isDeload, isWeek4, progressionGoal, gbW, tr) {
-            let top = roundToPlate(calculateWeight(e1rms.rdl, tr, rpe));
+            let top = topSet(e1rms.rdl, tr, rpe);
             if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
             const backoff  = roundToPlate(top * backoffPercent);
@@ -4297,7 +4374,7 @@
                 Each week you add a little weight: <strong>+2.5kg to Squat and Deadlift, +1.25kg to Bench and Overhead Press</strong>.
                 Week 4 top set is an <strong>AMRAP</strong> — same weight, as many clean reps as you can. Week 5 is a deload — back off the weight and take it easy so your body absorbs the work.
                 <br><br>
-                <strong>About the small jumps:</strong> 1.25kg means a fractional plate (0.625kg per side). Most commercial gyms don't have those — if yours doesn't, <strong>just round to the nearest plate you've got</strong> and add the small jump every second week instead. The program does the same: weights are rounded to 2.5kg.
+                <strong>About the small jumps:</strong> 1.25kg means a fractional plate (0.625kg per side). Most commercial gyms don't have those — if yours doesn't, <strong>just round to the nearest plate you've got</strong> and add the small jump every second week instead. ${PLATE_STEP === 1.25 ? 'You have 1.25kg set as your smallest jump, so the program uses the small jumps as written.' : 'The program does the same: weights are rounded to 2.5kg.'}
                 <br><br>
                 <strong>Don't know your numbers?</strong> Tap <strong>"Don't know"</strong> on any lift and it's prescribed by feel — start light, make the last 2 reps hard, and add a little next session. Enter a number instead and you'll get exact weights plus the plate breakdown (tap any weight).
                 <br><br>
@@ -4317,7 +4394,7 @@
         // OR a by-feel prescription if the number is unknown/blank.
         function mbpMainRows(name, e1rm, isUnknown, repTarget, rpe, isDeload, isWeek4, progressionGoal, feelName, feelPresc) {
             if (e1rm && !isUnknown) {
-                let top = roundToPlate(calculateWeight(e1rm, repTarget, rpe));
+                let top = topSet(e1rm, repTarget, rpe);
                 if (isWeek4 && !isDeload && progressionGoal === 'weight') top += 2.5;
                 const isAmrap = isWeek4 && !isDeload && progressionGoal === 'reps';
                 const backoff  = roundToPlate(top * backoffPercent);
@@ -4466,9 +4543,9 @@
             // Day 1: Squat main + Bench secondary
             // Day 2: Bench main + Deadlift secondary
             // Day 3: Deadlift main + Squat secondary
-            const sTop  = roundToPlate(calculateWeight(e1rms.squat, reps, rpe));
-            const bTop  = roundToPlate(calculateWeight(e1rms.bench, reps, rpe));
-            const dTop  = roundToPlate(calculateWeight(e1rms.dead,  reps, rpe));
+            const sTop  = topSet(e1rms.squat, reps, rpe);
+            const bTop  = topSet(e1rms.bench, reps, rpe);
+            const dTop  = topSet(e1rms.dead,  reps, rpe);
             const sBoff = roundToPlate(sTop * 0.85);
             const bBoff = roundToPlate(bTop * 0.85);
             const dBoff = roundToPlate(dTop * 0.85);
@@ -4628,8 +4705,8 @@
         }
 
         function bulgarianWeekContent(e1rms, rpe, isDeload, tr) {
-            const sqTop  = roundToPlate(calculateWeight(e1rms.squat, tr, rpe));
-            const bTop   = roundToPlate(calculateWeight(e1rms.bench, tr, rpe));
+            const sqTop  = topSet(e1rms.squat, tr, rpe);
+            const bTop   = topSet(e1rms.bench, tr, rpe);
             const sqBoff = roundToPlate(sqTop * 0.80);
             const bBoff  = roundToPlate(bTop  * 0.80);
             const dTop   = e1rms.dead ? roundToPlate(calculateWeight(e1rms.dead, tr, Math.min(rpe, 8))) : null;
@@ -4782,7 +4859,7 @@
         function sgDescending(e1rm, reps, topRpe, sets) {
             // Reps are held across sets, so separation must come from LOAD, not RPE.
             // An RPE-1 step at fixed reps is only ~3% and rounds to the same plate.
-            const top  = roundToPlate(calculateWeight(e1rm, reps, clampRpe(topRpe)));
+            const top  = topSet(e1rm, reps, clampRpe(topRpe));
             const drop = backoffDrop(reps, topRpe);
             return Array.from({ length: sets }, (_, i) =>
                 i === 0 ? top
@@ -4792,7 +4869,7 @@
         // ── Day 1: Larsen Press focus + chest/back/shoulder accessories ──────────
         function sgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const larsenE1rm = e1rms.larsen || (e1rms.bench * larsenFallback);
-            let lTop  = larsenE1rm ? roundToPlate(calculateWeight(larsenE1rm, tr, clampRpe(topRpe))) : null;
+            let lTop  = larsenE1rm ? topSet(larsenE1rm, tr, clampRpe(topRpe)) : null;
             if (isWeek4 && !isDeload && progressGoal === 'weight' && lTop) lTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             const lBoff = lTop ? roundToPlate(lTop * (1 - backoffDrop(tr, topRpe))) : null;
@@ -5027,7 +5104,7 @@
         // ── Day 4: Squat + RDL + legs ────────────────────────────────────────────
         function sgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
+            let sTop  = topSet(e1rms.squat, tr, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
             const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
             const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
@@ -5147,7 +5224,7 @@
 
         function agDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
+            let bTop  = topSet(e1rms.bench, tr, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
             const bBoff = roundToPlate(bTop * (1 - backoffDrop(tr, topRpe)));
             const sets  = isDeload ? 2 : 3;
@@ -5337,7 +5414,7 @@
 
         function agDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
+            let sTop  = topSet(e1rms.squat, tr, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
             const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
             const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
@@ -5453,7 +5530,7 @@
 
         function lgDay1(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let bTop  = roundToPlate(calculateWeight(e1rms.bench, tr, clampRpe(topRpe)));
+            let bTop  = topSet(e1rms.bench, tr, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') bTop += 2.5;
             const bBoff = roundToPlate(bTop * (1 - backoffDrop(tr, topRpe)));
             const sets  = isDeload ? 2 : 3;
@@ -5644,7 +5721,7 @@
 
         function lgDay4(e1rms, topRpe, isDeload, isWeek4, progressGoal, tr) {
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
-            let sTop  = roundToPlate(calculateWeight(e1rms.squat, tr, clampRpe(topRpe)));
+            let sTop  = topSet(e1rms.squat, tr, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sTop += 2.5;
             const sMid  = roundToPlate(sTop * (1 - backoffDrop(tr, topRpe)));
             const sLow  = roundToPlate(sTop * (1 - Math.min(backoffDrop(tr, topRpe) * 1.6, 0.22)));
@@ -5774,7 +5851,7 @@
         // ── Advanced RPE: Day 1 — Squat + Pause DL + Pause Squat ────────────────
         function advRpeDay1(e1rms, topRpe, targetReps, progressGoal, isWeek4, isDeload) {
             // Squat — standard top set + back-off
-            let sqTop = roundToPlate(calculateWeight(e1rms.squat, targetReps, clampRpe(topRpe)));
+            let sqTop = topSet(e1rms.squat, targetReps, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') sqTop += 2.5;
             const isAmrap = isWeek4 && !isDeload && progressGoal === 'reps';
             const boReps  = getBackoffReps(targetReps, 'advanced_rpe', progressGoal);
@@ -5917,7 +5994,7 @@
         // ── Advanced RPE: Day 3 — Deadlift + High Bar Squat + RDL ───────────────
         function advRpeDay3(e1rms, topRpe, targetReps, progressGoal, isWeek4, isDeload) {
             // Deadlift — standard top set + back-off
-            let dlTop = roundToPlate(calculateWeight(e1rms.dead, targetReps, clampRpe(topRpe)));
+            let dlTop = topSet(e1rms.dead, targetReps, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') dlTop += 2.5;
             const isAmrap  = isWeek4 && !isDeload && progressGoal === 'reps';
             const boReps   = getBackoffReps(targetReps, 'advanced_rpe', progressGoal);
@@ -5987,7 +6064,7 @@
         // ── Advanced RPE: Day 4 — Comp Bench + Upper Accessories ────────────────
         function advRpeDay4(e1rms, topRpe, targetReps, progressGoal, isWeek4, isDeload) {
             // Comp Bench — standard top set + back-off
-            let benchTop = roundToPlate(calculateWeight(e1rms.bench, targetReps, clampRpe(topRpe)));
+            let benchTop = topSet(e1rms.bench, targetReps, clampRpe(topRpe));
             if (isWeek4 && !isDeload && progressGoal === 'weight') benchTop += 2.5;
             const isAmrap   = isWeek4 && !isDeload && progressGoal === 'reps';
             const boReps    = getBackoffReps(targetReps, 'advanced_rpe', progressGoal);
