@@ -1664,6 +1664,10 @@
         };
 
         const weeklyRPE    = [7, 8, 8.5, 9];
+        // Bench Max climbs straight to RPE 9 in week 3, then week 4 repeats RPE 9
+        // with the +5kg bench bump on top. With the standard 8.5 step, week 3 sat
+        // only ~2kg above week 2 and week 4 then jumped 7.5kg (RPE 8.5 -> 9 plus 5).
+        const benchMaxRPE  = [7, 8, 9, 9];
         const cuttingRPE   = [6, 6.5, 7, 7.5, 8, 8, 8, 8];
         // Single source of truth for prescribable rep targets. Must match the
         // Target Rep Range select. 4 and 7 were missing here, which forced
@@ -2700,7 +2704,7 @@
             const isAdvancedRPE = focus === 'advanced_rpe';
 
             PLATE_STEP    = parseFloat(document.getElementById('plateStep').value) === 1.25 ? 1.25 : 2.5;
-            ACTIVE_LADDER = isCutting ? cuttingRPE : (isPeaking ? null : weeklyRPE);
+            ACTIVE_LADDER = isCutting ? cuttingRPE : (isPeaking ? null : (isBenchMax ? benchMaxRPE : weeklyRPE));
 
             const e1rms = {};
             const lifts = ['dead', 'squat', 'bench', 'ohp'];
@@ -2825,9 +2829,10 @@
             } else {
                 // ── Original programs ──
                 const isBeg = isBeginner;
-                const wBadges = isBeg ? ['Intro','Build','Push','Max Out'] : weeklyRPE.map(r => 'RPE ' + r);
+                const ladder  = isBenchMax ? benchMaxRPE : weeklyRPE;
+                const wBadges = isBeg ? ['Intro','Build','Push','Max Out'] : ladder.map(r => 'RPE ' + r);
+                if (isBenchMax) wBadges[3] = progressGoal === 'weight' ? 'RPE 9 +5kg' : 'RPE 9 AMRAP';
                 for (let w = 0; w < 4; w++) {
-                    const rpe = weeklyRPE[w];
                     html += `
                         <div class="week-block week-${w+1}">
                             <div class="week-header" onclick="toggleWeek(this)">
@@ -2854,7 +2859,9 @@
                 html += `<div class="info-box">
                     ${isBeg
                         ? '<strong>Beginner Machine Program:</strong> 4 days/week, Push/Pull + Legs/Core split. Week 4 progression sets are AMRAP. Week 5 is a deload at reduced volume. Focus on controlled form and progressive overload each week.'
-                        : `<strong>Progression:</strong> RPE rises from 7 → 8 → 8.5 → 9 across weeks 1–4.
+                        : `<strong>Progression:</strong> ${isBenchMax
+                            ? 'RPE rises 7 → 8 → 9 across weeks 1–3; week 4 holds RPE 9.'
+                            : 'RPE rises from 7 → 8 → 8.5 → 9 across weeks 1–4.'}
                         ${progressGoal==='reps'
                             ? 'Week 4 top sets are AMRAP — aim for max reps to test your progress.'
                             : (focus === 'benchmax'
@@ -2894,7 +2901,7 @@
 
         function generateWeekContent(e1rms, weekIndex, targetReps, focus, days, isDeload, progressionGoal) {
             let html = '';
-            const rpe = isDeload ? 6 : weeklyRPE[weekIndex];
+            const rpe = isDeload ? 6 : (focus === 'benchmax' ? benchMaxRPE : weeklyRPE)[weekIndex];
             const isWeek4 = weekIndex === 3;
 
             if (focus === 'beginner_machine') {
